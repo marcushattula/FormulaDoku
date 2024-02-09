@@ -150,14 +150,22 @@ class QuizGame():
         """
         self.print_questions()
         while True:
-            selected_cell = self.get_user_input(1)
-            if selected_cell == None: # Start over
+            # Get user input. May be cell or cell and answer.
+            user_input1 = self.get_user_input(1)
+            if user_input1 == None: # User gave invalid answer -> Start over
                 continue
-            (selected_col, selected_row) = self.select_cell(selected_cell)
-            self.print_cell_question(selected_col, selected_row)
-            user_guess = self.get_user_input(2)
-            if user_guess == None: # Start over
-                continue
+            elif len(user_input1) == 2 and isinstance(user_input1, str): # User gave cell name -> prompt for answer
+                selected_cell = user_input1
+                (selected_col, selected_row) = self.select_cell(user_input1)
+                self.print_cell_question(selected_col, selected_row)
+                user_guess = self.get_user_input(2)
+                if user_guess == None: # Start over
+                    continue
+            elif isinstance(user_input1, tuple): # User gave cell and answer -> continue to check answer
+                (selected_cell, user_guess) = user_input1
+                (selected_col, selected_row) = self.select_cell(selected_cell)
+            else:
+                raise Exception("Error in receiving answer.")
             assert isinstance(user_guess, MyDataClass), "Invalid guess class type!"
             if self.answer_question(selected_col, selected_row, user_guess):
                 self.solved_cells.append(selected_cell)
@@ -186,6 +194,23 @@ class DriverQuiz(QuizGame):
         Outputs:
             user_input: ?; User's input. Must be valid answer depending on input type. None means cancel.
         """
+
+        def driver_answer(inp:str) -> MyDataClass:
+            if inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "fullname")]:
+                return find_single_object_by_field_value(self.archive.drivers, "fullname", inp, strict=False)
+            elif inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "surname")]:
+                try:
+                    answer = find_single_object_by_field_value(self.archive.drivers, "surname", inp, strict=False)
+                    return answer
+                except AssertionError:
+                    print("Multiple possible drivers for given criteria. Use full name.")
+                    return None
+                except Exception as e:
+                    raise e
+            else:
+                print("Invalid input. Try again.")
+                return None
+
         while True:
             if input_type == 1:
                 input_string = "Please input the coordinates of the question you want to answer (e.g. B1). "
@@ -199,27 +224,27 @@ class DriverQuiz(QuizGame):
                 return None
             elif inp.lower() == "quit" or inp.lower() == 'q':
                 exit()
-            elif input_type == 1: # User should grid coordinates
+            elif input_type == 1: # User should input grid coordinates
                 if len(inp) == 2 and inp[0].upper() in self.colnames[:self.n_columns] and inp[1] in self.rownames[:self.n_rows]:
                     if inp.upper() in self.solved_cells:
                         print(f"Cell {inp} has already been solved!")
                     else:
                         return inp.upper()
+                elif inp[0].upper() in self.colnames[:self.n_columns] and inp[1] in self.rownames[:self.n_rows] and " " in inp:
+                    # User input both cell and answer simultaneously
+                    inps = inp.split(" ", 1)
+                    assert len(inps) == 2, "Invalid input, try again."
+                    selected_cell = inps[0]
+                    answer = driver_answer(inps[1])
+                    if isinstance(answer, Driver):
+                        return (selected_cell.upper(), answer)
                 else:
                     print("Invalid input. Please try again.")
             elif input_type == 2: # User should input driver name
-                if inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "fullname")]:
-                    return find_single_object_by_field_value(self.archive.drivers, "fullname", inp, strict=False)
-                elif inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "surname")]:
-                    try:
-                        answer = find_single_object_by_field_value(self.archive.drivers, "surname", inp, strict=False)
-                        return answer
-                    except AssertionError:
-                        print("Multiple possible drivers for given criteria. Use full name.")
-                    except Exception as e:
-                        raise e
-                else:
-                    print("Invalid input. Try again.")
+                answer = driver_answer(inp)
+                if isinstance(answer, Driver):
+                    return answer
+                
 
 
 class ConstructorQuiz(QuizGame):
