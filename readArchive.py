@@ -3,6 +3,9 @@ import shutil
 import csv
 
 class ArchiveReader():
+    """
+    Class for reading and storing data from archive.
+    """
 
     def __init__(self, archive_path:str=None):
         """
@@ -218,9 +221,14 @@ class ArchiveReader():
         for year in champions_dict:
             champions_dict[year].championships += 1
 
-    def get_category(self, listname:str, categoryname:str) -> list[str]:
+    def get_category(self, listname:str, categoryname:str) -> list:
         """
-        
+        Return a list mapped to a certain category of said list (e.g. the forename of every driver).
+        Parameters: 
+            listname: str; The name of the list to be mapped (drivers, races, constructors etc.)
+            categoryname: str; The name of the attribute to map to (surname, fullname etc.)
+        Outputs:
+            returnlist: list; A list where each element is mapped to given attribute
         """
         listname = listname.lower()
         categoryname = categoryname.lower()

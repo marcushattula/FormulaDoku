@@ -7,18 +7,25 @@ from race import Race
 from question import new_question, Question
 from unicodedata import normalize
 
-def remove_accents(input_str):
+def remove_accents(input_str:str):
+    """
+    Remove accents, diacritics etc. from string.
+    Parameters:
+        input_str: str; String to remove accents and diacritics from
+    Outputs:
+        only_ascii: str; String with removed accents and diacritics, e.g. "Räikkönen" -> "Raikkonen"
+    """
     nfkd_form = normalize('NFKD', input_str)
     only_ascii = nfkd_form.encode('ASCII', 'ignore')
     return str(only_ascii, 'utf-8')
 
-GLOBALSFILE = os.path.abspath(__file__)
-HOMEDIR = os.path.dirname(GLOBALSFILE)
+GLOBALSFILE = os.path.abspath(__file__) # Path to this file
+HOMEDIR = os.path.dirname(GLOBALSFILE) # Path to home directory, that is the parent directory of this file
 
-TEMP_DIRNAME = "temps"
-TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME)
+TEMP_DIRNAME = "temps" # Name of folder where to output extracted data from archive
+TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive directory path
 
-ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip")
+ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip") # Path to archive file
 
 def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> list[MyDataClass]:
     """

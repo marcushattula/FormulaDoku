@@ -5,8 +5,14 @@ DRIVER_DATA_FIELDS = ["driverId","driverRef","number","code","forename","surname
 DRIVER_CAREER_DATA = ["championships","wins","podiums","career_points","poles","entries","sprint_wins"]
 
 class Driver(MyDataClass):
+    """
+    Dataclass for storing results of a driver.
+    """
 
     def __init__(self):
+        """
+        Initializes empty class where all fields are set to None or empty lists.
+        """
         for data_field in DRIVER_DATA_FIELDS:
             setattr(self, data_field, None)
         for data_field in DRIVER_CAREER_DATA:

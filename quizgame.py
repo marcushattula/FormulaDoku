@@ -2,35 +2,70 @@ from globals import *
 from readArchive import ArchiveReader
 
 class QuizGame():
-    colnames = ['A','B','C','D','E']
-    rownames = ['1','2','3','4','5']
+    """
+    Classs for storing status of the game.
+    """
+    colnames = ['A','B','C','D','E'] # Columns are labeled letters A-E
+    rownames = ['1','2','3','4','5'] # Rows are labeled numbers 1-5
 
     def __init__(self, archive:ArchiveReader):
         """
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
-        self.solved = False
-        self.solved_cells = []
-        self.n_columns = 3
-        self.n_rows = 3
+        self.solved = False # Flag for if game is solved, i.e. all cells have been answered
+        self.solved_cells = [] # List of solved cells
+        self.n_columns = 3 # Number of columns
+        self.n_rows = 3 # Number of rows
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
-        self.archive = archive
+        self.archive = archive # ArchiveReader class, containing result data
 
-    def set_n_columns(self, n:int):
+    def set_n_columns(self, n:int) -> None:
+        """
+        Set number of columns, minimum of 1, maximum of 5
+        Parameters:
+            n: int; number of columns in this quiz.
+        Outputs:
+            Sets self.n_columns to n.
+            Returns None
+        """
         assert isinstance(n, int), "Number of columns must be integer!"
         assert 1 <= n <= 5, "Number of columns must be 1-5!"
         self.n_columns = n
     
-    def set_n_rows(self, n:int):
+    def set_n_rows(self, n:int) -> None:
+        """
+        Set number of rows, minimum of 1, maximum of 5
+        Parameters:
+            n: int; number of rows in this quiz.
+        Outputs:
+            Sets self.n_rows to n.
+            Returns None
+        """
         assert isinstance(n, int), "Number of rows must be integer!"
         assert 1 <= n <= 5, "Number of rows must be 1-5!"
         self.n_rows = n
     
-    def set_difficulty(self, difficulty:int):
+    def set_difficulty(self, difficulty:int) -> None:
+        """
+        Sets the difficulty of the game.
+        Parameters:
+            difficulty: int; difficulty of quiz. 1 = Easy, 2 = Medium, 3 = Hard
+        Outputs:
+            Sets self.difficulty to given number
+            Returns None
+        """
         assert isinstance(difficulty, int) and 1 <= difficulty <= 3, "Number of columns must be integer 1-3!"
         self.difficulty = difficulty
     
-    def start_game(self):
+    def start_game(self) -> None:
+        """
+        Starts the game with set settings. Generates questions.
+        Parameters:
+            None
+        Outputs:
+            Adds questions to self.col_questions and self.row_questions
+            Returns None
+        """
         self.col_questions = []
         self.row_questions = []
         for n in range(self.n_columns):
@@ -48,12 +83,27 @@ class QuizGame():
             self.row_questions.append(question)
 
     def select_cell(self, cellname:str) -> tuple[int,int]:
+        """
+        Return the coordinates of a cell based on its name.
+        Parameters:
+            cellname: str; name of cell, e.g. C2
+        Outputs:
+            t: tuple[int, int]; tuple of cell coordinates, [column_id, row_id]
+        """
         assert len(cellname) == 2, "Name of cell must be two characters!"
         col = self.colnames.index(cellname[0])
         row = self.rownames.index(cellname[1])
         return (col, row)
 
-    def print_questions(self):
+    def print_questions(self) -> None:
+        """
+        Print all the columns and rows along with corresponding questions.
+        Parameters:
+            None
+        Outputs:
+            Questions are printed to terminal
+            Returns None
+        """
         for n in range(self.n_columns):
             question = self.col_questions[n].question
             print(self.colnames[n] + ": " + question[0] + ": " + str(question[1]))
@@ -63,7 +113,15 @@ class QuizGame():
             print(self.rownames[n] + ": " + question[0] + ": " + str(question[1]))
     
     def print_cell_question(self, col:int, row:int) -> None:
-        """"""
+        """
+        Print the question of a single cell, that is it's column and row questions
+        Parameters:
+            col: int; cell column id
+            row: int; cell row id
+        Output:
+            Prints column and row quetion to terminal
+            Returns None
+        """
         col_question = self.col_questions[col].question
         row_question = self.row_questions[row].question
         printstr1 = col_question[0] + ": " + str(col_question[1])
@@ -71,13 +129,29 @@ class QuizGame():
         print(printstr1 + " + " + printstr2)
 
     def answer_question(self, col:int, row:int, answer:MyDataClass) -> bool:
-        """"""
+        """
+        Check if given object is a correct answer for question. Answer must satisfy both column and row questions.
+        Parameters:
+            col: int; column id
+            row: int; row id
+            answer: MyDataClass; given answer.
+        Outputs:
+            b: bool; True if both questions are satisfied by answer, else False
+        """
         col_question = self.col_questions[col]
         row_question = self.row_questions[row]
         return col_question.check_question(answer) and row_question.check_question(answer)
 
-    def user_turn(self):
-        """"""
+    def user_turn(self) -> None:
+        """
+        It is the user's turn. Print the questions and prompt user for cell and answer.
+        Parameters:
+            None
+        Outputs:
+            Questions are printed and answered in terminal.
+            If user answers question correctly, add it to self.solved_cells
+            Returns None
+        """
         self.print_questions()
         while True:
             selected_cell = self.get_user_input(1)
@@ -97,13 +171,14 @@ class QuizGame():
             break
 
 
-
-
 class DriverQuiz(QuizGame):
+    """
+    Quizgame where the player must answer different drivers.
+    """
 
     def __init__(self, archive:ArchiveReader):
-        super().__init__(archive)
-        self.validation_list = self.archive.drivers
+        super().__init__(archive) # Init parent class
+        self.validation_list = self.archive.drivers # Use drivers when validating answers.
 
     def get_user_input(self, input_type:int):
         """
@@ -150,19 +225,33 @@ class DriverQuiz(QuizGame):
                 else:
                     print("Invalid input. Try again.")
 
+
 class ConstructorQuiz(QuizGame):
+    """
+    Quizgame where the player must answer different constructors (NOT IMPLEMENTED).
+    """
 
     def __init__(self):
         pass
+
 
 class RaceQuiz(QuizGame):
+    """
+    Quizgame where the player must answer different races (NOT IMPLEMENTED).
+    """
 
     def __init__(self):
         pass
 
+
 def play_game(cols:int=3, rows:int=3, difficulty:int=1):
+    """
+    Play driver quiz. This method is used for debugging.
+    """
     new_quiz = DriverQuiz(ArchiveReader(archive_path=ARCHIVE_FILE))
-    new_quiz.set_difficulty(1)
+    new_quiz.set_n_columns(cols)
+    new_quiz.set_n_rows(rows)
+    new_quiz.set_difficulty(difficulty)
     new_quiz.start_game()
     guesses = 9
     

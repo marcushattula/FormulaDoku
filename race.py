@@ -7,8 +7,14 @@ RACE_DATA_FIELDS = ["raceId","year","round","circuitId",
                     "sprint_date","sprint_time"]
 
 class Race(MyDataClass):
+    """
+    Dataclass for storing race information.
+    """
 
     def __init__(self):
+        """
+        Initializes empty class where all fields are set to None or empty lists.
+        """
         for data_field in RACE_DATA_FIELDS:
             setattr(self, data_field, None)
     
