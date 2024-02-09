@@ -173,7 +173,7 @@ class QuizGame():
             Returns None
         """
         self.print_questions()
-        while True:
+        while not self.forfeit:
             # Get user input. May be cell or cell and answer.
             user_input1 = self.get_user_input(1)
             if user_input1 == None: # User gave invalid answer -> Start over
@@ -208,7 +208,8 @@ class QuizGame():
             Plays the game in the terminal. Outputs and receives data in terminal.
             Returns None
         """
-        while self.guesses > 0 and not self.solved:
+        self.forfeit = False # Placeholder
+        while self.guesses > 0 and not self.solved and not self.forfeit:
             self.user_turn()
         print(f"Game over! You answered {len(self.solved_cells)} questions correctly!")
 
@@ -262,6 +263,9 @@ class DriverQuiz(QuizGame):
                 return None
             elif inp.lower() == "quit" or inp.lower() == 'q':
                 exit()
+            elif inp.lower() == "give up" or inp.lower() == "forfeit":
+                self.forfeit = True
+                return None
             elif input_type == 1: # User should input grid coordinates
                 if len(inp) == 2 and inp[0].upper() in self.colnames[:self.n_columns] and inp[1] in self.rownames[:self.n_rows]:
                     if inp.upper() in self.solved_cells:
