@@ -92,6 +92,12 @@ class Question():
         """
         pass
     
+    def __str__(self) -> str:
+        """
+        Overwrite string method to return string consisting of question base and limit/target
+        """
+        return self.question[0] + ": " + str(self.question[1])
+
     def choose_question(self, difficulty:int, setseed=None):
         """
         Choose a question depending on difficulty. One question cannot be selected multiple times.

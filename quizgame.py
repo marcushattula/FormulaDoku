@@ -105,12 +105,10 @@ class QuizGame():
             Returns None
         """
         for n in range(self.n_columns):
-            question = self.col_questions[n].question
-            print(self.colnames[n] + ": " + question[0] + ": " + str(question[1]))
+            print(self.colnames[n] + ": " + str(self.col_questions[n]))
         print("\n")
         for n in range(self.n_rows):
-            question = self.row_questions[n].question
-            print(self.rownames[n] + ": " + question[0] + ": " + str(question[1]))
+            print(self.rownames[n] + ": " + str(self.row_questions[n]))
     
     def print_cell_question(self, col:int, row:int) -> None:
         """
@@ -122,11 +120,9 @@ class QuizGame():
             Prints column and row quetion to terminal
             Returns None
         """
-        col_question = self.col_questions[col].question
-        row_question = self.row_questions[row].question
-        printstr1 = col_question[0] + ": " + str(col_question[1])
-        printstr2 = row_question[0] + ": " + str(row_question[1])
-        print(printstr1 + " + " + printstr2)
+        col_question = self.col_questions[col]
+        row_question = self.row_questions[row]
+        print(str(col_question) + " + " + str(row_question))
 
     def answer_question(self, col:int, row:int, answer:MyDataClass) -> bool:
         """
