@@ -18,6 +18,17 @@ class QuizGame():
         self.n_rows = 3 # Number of rows
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
         self.archive = archive # ArchiveReader class, containing result data
+        self.guesses = 9 # Number of guesses
+
+    def solved(self) -> bool:
+        """
+        Check if game is solved (=> number of solved cells == number of cells in quiz)
+        Parameters:
+            None
+        Outputs:
+            b: bool; True if game is solved, else False
+        """
+        return self.solved_cells == self.n_columns*self.n_rows
 
     def set_n_columns(self, n:int) -> None:
         """
@@ -57,6 +68,18 @@ class QuizGame():
         assert isinstance(difficulty, int) and 1 <= difficulty <= 3, "Number of columns must be integer 1-3!"
         self.difficulty = difficulty
     
+    def set_guesses(self, guesses:int) -> None:
+        """
+        Set the number of guesses available during the game. Default = 9
+        Parameters:
+            guesses: int; how many guesses the user has
+        Outputs:
+            Sets self.guesses to given number
+            Returns None
+        """
+        assert isinstance(guesses, int) and guesses > 0, "Number of guesses must be positive integer."
+        self.guesses = guesses
+
     def start_game(self) -> None:
         """
         Starts the game with set settings. Generates questions.
@@ -106,7 +129,7 @@ class QuizGame():
         """
         for n in range(self.n_columns):
             print(self.colnames[n] + ": " + str(self.col_questions[n]))
-        print("\n")
+        print("\n", end="")
         for n in range(self.n_rows):
             print(self.rownames[n] + ": " + str(self.row_questions[n]))
     
@@ -146,6 +169,7 @@ class QuizGame():
         Outputs:
             Questions are printed and answered in terminal.
             If user answers question correctly, add it to self.solved_cells
+            Increments guesses by -1 with every guess
             Returns None
         """
         self.print_questions()
@@ -172,7 +196,21 @@ class QuizGame():
                 print("Correct!\n")
             else:
                 print("Incorrect!\n")
+            self.guesses -= 1
             break
+
+    def play_game(self) -> None:
+        """
+        Play the game in terminal.
+        Parameters:
+            None
+        Outputs:
+            Plays the game in the terminal. Outputs and receives data in terminal.
+            Returns None
+        """
+        while self.guesses > 0 and not self.solved:
+            self.user_turn()
+        print(f"Game over! You answered {len(self.solved_cells)} questions correctly!")
 
 
 class DriverQuiz(QuizGame):
@@ -246,7 +284,6 @@ class DriverQuiz(QuizGame):
                     return answer
                 
 
-
 class ConstructorQuiz(QuizGame):
     """
     Quizgame where the player must answer different constructors (NOT IMPLEMENTED).
@@ -265,7 +302,7 @@ class RaceQuiz(QuizGame):
         pass
 
 
-def play_game(cols:int=3, rows:int=3, difficulty:int=1):
+def play_game(cols:int=3, rows:int=3, difficulty:int=1, guesses:int=9):
     """
     Play driver quiz. This method is used for debugging.
     """
@@ -273,13 +310,10 @@ def play_game(cols:int=3, rows:int=3, difficulty:int=1):
     new_quiz.set_n_columns(cols)
     new_quiz.set_n_rows(rows)
     new_quiz.set_difficulty(difficulty)
+    new_quiz.set_guesses(guesses)
     new_quiz.start_game()
-    guesses = 9
+    new_quiz.play_game()
     
-    while not (new_quiz.solved or guesses == 0):
-        new_quiz.user_turn()
-        guesses -= 1
-    print(f"Game over! You answered {len(new_quiz.solved_cells)} questions correctly!")
 
 
 if __name__ == "__main__":
