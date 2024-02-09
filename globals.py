@@ -19,6 +19,8 @@ def remove_accents(input_str:str):
     only_ascii = nfkd_form.encode('ASCII', 'ignore')
     return str(only_ascii, 'utf-8')
 
+PROJECT_NAME = "FormulaDoku"
+
 GLOBALSFILE = os.path.abspath(__file__) # Path to this file
 HOMEDIR = os.path.dirname(GLOBALSFILE) # Path to home directory, that is the parent directory of this file
 
