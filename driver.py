@@ -20,6 +20,12 @@ class Driver(MyDataClass):
         self.teams = []
         self.season_data = {}
     
+    def __str__(self):
+        """
+        Returns full name of driver
+        """
+        return self.fullname
+    
     def read_data(self, data:list[str]):
         assert len(data) == len(DRIVER_DATA_FIELDS), f"Unsupported number of fields! Must be {len(DRIVER_DATA_FIELDS)}, found {len(data)}!"
         for i in range(len(data)):

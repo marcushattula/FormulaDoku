@@ -13,7 +13,8 @@ class QuizGame():
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
         self.solved = False # Flag for if game is solved, i.e. all cells have been answered
-        self.solved_cells = [] # List of solved cells
+        self.solved_cells = [] # List of solved cells, tuple (col, row)
+        self.given_answers = {} # List of given correct answers, same answer cannot be used multiple times
         self.n_columns = 3 # Number of columns
         self.n_rows = 3 # Number of rows
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
@@ -28,7 +29,7 @@ class QuizGame():
         Outputs:
             b: bool; True if game is solved, else False
         """
-        return self.solved_cells == self.n_columns*self.n_rows
+        return len(self.solved_cells) == self.n_columns*self.n_rows
 
     def set_n_columns(self, n:int) -> None:
         """
@@ -133,19 +134,18 @@ class QuizGame():
         for n in range(self.n_rows):
             print(self.rownames[n] + ": " + str(self.row_questions[n]))
     
-    def print_cell_question(self, col:int, row:int) -> None:
+    def print_cell_question(self, col:int, row:int) -> str:
         """
-        Print the question of a single cell, that is it's column and row questions
+        Get the question of a single cell, that is it's column and row questions
         Parameters:
             col: int; cell column id
             row: int; cell row id
         Output:
-            Prints column and row quetion to terminal
-            Returns None
+            Reutrns column and row quetion as string
         """
         col_question = self.col_questions[col]
         row_question = self.row_questions[row]
-        print(str(col_question) + " + " + str(row_question))
+        return str(col_question) + " + " + str(row_question)
 
     def answer_question(self, col:int, row:int, answer:MyDataClass) -> bool:
         """
@@ -157,9 +157,17 @@ class QuizGame():
         Outputs:
             b: bool; True if both questions are satisfied by answer, else False
         """
+        assert answer not in self.given_answers.values(), f"{str(answer)} has already been given as an answer!"
         col_question = self.col_questions[col]
         row_question = self.row_questions[row]
-        return col_question.check_question(answer) and row_question.check_question(answer)
+        assert self.guesses > 0, "No guesses remaining!"
+        self.guesses -= 1
+        if col_question.check_question(answer) and row_question.check_question(answer):
+            self.solved_cells.append((col, row))
+            self.given_answers[(col, row)] = answer
+            return True
+        else:
+            return False
 
     def user_turn(self) -> None:
         """
@@ -168,12 +176,11 @@ class QuizGame():
             None
         Outputs:
             Questions are printed and answered in terminal.
-            If user answers question correctly, add it to self.solved_cells
             Increments guesses by -1 with every guess
             Returns None
         """
         self.print_questions()
-        while not self.forfeit:
+        while not self.forfeit and self.guesses > 0:
             # Get user input. May be cell or cell and answer.
             user_input1 = self.get_user_input(1)
             if user_input1 == None: # User gave invalid answer -> Start over
@@ -181,7 +188,7 @@ class QuizGame():
             elif len(user_input1) == 2 and isinstance(user_input1, str): # User gave cell name -> prompt for answer
                 selected_cell = user_input1
                 (selected_col, selected_row) = self.select_cell(user_input1)
-                self.print_cell_question(selected_col, selected_row)
+                print(self.print_cell_question(selected_col, selected_row))
                 user_guess = self.get_user_input(2)
                 if user_guess == None: # Start over
                     continue
@@ -191,13 +198,14 @@ class QuizGame():
             else:
                 raise Exception("Error in receiving answer.")
             assert isinstance(user_guess, MyDataClass), "Invalid guess class type!"
-            if self.answer_question(selected_col, selected_row, user_guess):
-                self.solved_cells.append(selected_cell)
+            if user_guess in self.given_answers.values():
+                print(f"{str(user_guess)} has already been given as an answer! Try again!")
+            elif self.answer_question(selected_col, selected_row, user_guess):
                 print("Correct!\n")
+                break
             else:
                 print("Incorrect!\n")
-            self.guesses -= 1
-            break
+                break
 
     def play_game(self) -> None:
         """
@@ -209,9 +217,45 @@ class QuizGame():
             Returns None
         """
         self.forfeit = False # Placeholder
-        while self.guesses > 0 and not self.solved and not self.forfeit:
+        while self.guesses > 0 and not self.solved() and not self.forfeit:
             self.user_turn()
         print(f"Game over! You answered {len(self.solved_cells)} questions correctly!")
+
+    def string_to_dataclass(self) -> MyDataClass:
+        """
+        Turn string into driver Dataclass.
+        Parameters:
+            inp: str; string of driver surname or full name to match with MyDataClass object.
+        Outputs:
+            answer: MyDataClass; Driver object with matching name
+        """
+        raise AttributeError("Missing inherited override function.")
+
+    def cell_to_tuple(self, cellname:str) -> tuple[int,int]:
+        """
+        Makes cell name into tuple = (col_id, row_id)
+        Parameters:
+            cellname: str; cell name, e.g. A1 or C2
+        Outputs:
+            col_row_tuple: tuple[int,int]; tuple of (col_id, row_id) of cell
+        """
+        assert len(cellname) == 2 and cellname[0] in self.colnames and cellname[1] in self.rownames, f'"{cellname}" is not a valid cell name'
+        col_id = self.colnames.index(cellname[0])
+        row_id = self.rownames.index(cellname[1])
+        return (col_id, row_id)
+    
+    def tuple_to_cell(self, celltuple:tuple[int,int]) -> str:
+        """
+        Constucts cell name based on tuple of col and row id.
+        Parameters:
+            celltuple: tuple[int,int]; tuple of type (col_id, row_id)
+        Outputs:
+            cellname: str; name of cell, e.g. A1 or C3
+        """
+        assert len(celltuple) == 2, "Invalid cell tuple"
+        colname = self.colnames(celltuple[0])
+        rowname = self.rownames(celltuple[1])
+        return colname + rowname
 
 
 class DriverQuiz(QuizGame):
@@ -233,23 +277,6 @@ class DriverQuiz(QuizGame):
         Outputs:
             user_input: ?; User's input. Must be valid answer depending on input type. None means cancel.
         """
-
-        def driver_answer(inp:str) -> MyDataClass:
-            if inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "fullname")]:
-                return find_single_object_by_field_value(self.archive.drivers, "fullname", inp, strict=False)
-            elif inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "surname")]:
-                try:
-                    answer = find_single_object_by_field_value(self.archive.drivers, "surname", inp, strict=False)
-                    return answer
-                except AssertionError:
-                    print("Multiple possible drivers for given criteria. Use full name.")
-                    return None
-                except Exception as e:
-                    raise e
-            else:
-                print("Invalid input. Try again.")
-                return None
-
         while True:
             if input_type == 1:
                 input_string = "Please input the coordinates of the question you want to answer (e.g. B1). "
@@ -267,26 +294,52 @@ class DriverQuiz(QuizGame):
                 self.forfeit = True
                 return None
             elif input_type == 1: # User should input grid coordinates
-                if len(inp) == 2 and inp[0].upper() in self.colnames[:self.n_columns] and inp[1] in self.rownames[:self.n_rows]:
-                    if inp.upper() in self.solved_cells:
+                if len(inp) == 2 and inp[0].upper() in self.colnames and inp[1] in self.rownames:
+                    if self.cell_to_tuple(inp.upper()) in self.solved_cells:
                         print(f"Cell {inp} has already been solved!")
                     else:
                         return inp.upper()
-                elif inp[0].upper() in self.colnames[:self.n_columns] and inp[1] in self.rownames[:self.n_rows] and " " in inp:
+                elif inp[0].upper() in self.colnames and inp[1] in self.rownames and " " in inp:
                     # User input both cell and answer simultaneously
                     inps = inp.split(" ", 1)
                     assert len(inps) == 2, "Invalid input, try again."
                     selected_cell = inps[0]
-                    answer = driver_answer(inps[1])
+                    if self.cell_to_tuple(selected_cell.upper()) in self.solved_cells:
+                        print(f"Cell {inp} has already been solved!")
+                        continue
+                    answer = self.string_to_dataclass(inps[1])
                     if isinstance(answer, Driver):
                         return (selected_cell.upper(), answer)
                 else:
                     print("Invalid input. Please try again.")
             elif input_type == 2: # User should input driver name
-                answer = driver_answer(inp)
+                answer = self.string_to_dataclass(inp)
                 if isinstance(answer, Driver):
                     return answer
-                
+
+    def string_to_dataclass(self, inp:str) -> MyDataClass:
+        """
+        Turn string into driver Dataclass.
+        Parameters:
+            inp: str; string of driver surname or full name to match with MyDataClass object.
+        Outputs:
+            answer: MyDataClass; Driver object with matching name
+        """
+        if inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "fullname")]:
+            return find_single_object_by_field_value(self.archive.drivers, "fullname", inp, strict=False)
+        elif inp in [remove_accents(driver_name).lower() for driver_name in self.archive.get_category("drivers", "surname")]:
+            try:
+                answer = find_single_object_by_field_value(self.archive.drivers, "surname", inp, strict=False)
+                return answer
+            except AssertionError:
+                print("Multiple possible drivers for given criteria. Use full name.")
+                return None
+            except Exception as e:
+                raise e
+        else:
+            print("Invalid input. Try again.")
+            return None                
+
 
 class ConstructorQuiz(QuizGame):
     """
@@ -306,7 +359,7 @@ class RaceQuiz(QuizGame):
         pass
 
 
-def play_game(cols:int=3, rows:int=3, difficulty:int=1, guesses:int=9):
+def play_driver_game(cols:int=3, rows:int=3, difficulty:int=1, guesses:int=9):
     """
     Play driver quiz. This method is used for debugging.
     """
@@ -317,8 +370,8 @@ def play_game(cols:int=3, rows:int=3, difficulty:int=1, guesses:int=9):
     new_quiz.set_guesses(guesses)
     new_quiz.start_game()
     new_quiz.play_game()
-    
+
 
 
 if __name__ == "__main__":
-    play_game()
+    play_driver_game()

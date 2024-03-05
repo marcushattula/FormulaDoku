@@ -28,6 +28,7 @@ TEMP_DIRNAME = "temps" # Name of folder where to output extracted data from arch
 TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive directory path
 
 ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip") # Path to archive file
+DEFAULT_PICTURE = os.path.join(HOMEDIR, "default.jpg")
 
 def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> list[MyDataClass]:
     """

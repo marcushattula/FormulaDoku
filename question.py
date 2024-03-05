@@ -170,7 +170,8 @@ class DriverDataQuestion(Question):
         ("Driver nationality", "German", driverNationality),
         ("Driver nationality", "British", driverNationality),
         ("Driver nationality", "Italian", driverNationality),
-        ("Driver nationality", "French", driverNationality)
+        ("Driver nationality", "French", driverNationality),
+        ("Driver nationality", "Brazilian", driverNationality)
     ]
     questions2 = [ # Medium questions
         ("Driver nationality", "American", driverNationality),
@@ -200,7 +201,6 @@ class DriverTeamQuestion(Question):
     questions3 = [ # Hard questions
         ("Driven for team", "Sauber", driverTeam),
         ("Driven for team", "Toro Rosso", driverTeam),
-        ("Driven for team", "Alfa Romeo", driverTeam)
     ]
 
     def __init__(self, difficulty:int) -> None:
