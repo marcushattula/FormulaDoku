@@ -12,14 +12,13 @@ class QuizGame():
         """
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
-        self.solved = False # Flag for if game is solved, i.e. all cells have been answered
         self.solved_cells = [] # List of solved cells, tuple (col, row)
         self.given_answers = {} # List of given correct answers, same answer cannot be used multiple times
         self.n_columns = 3 # Number of columns
         self.n_rows = 3 # Number of rows
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
         self.archive = archive # ArchiveReader class, containing result data
-        self.guesses = 9 # Number of guesses
+        self.guesses = self.n_columns * self.n_rows # Number of guesses
 
     def solved(self) -> bool:
         """
@@ -92,6 +91,7 @@ class QuizGame():
         """
         self.col_questions = []
         self.row_questions = []
+        self.guesses = self.n_columns * self.n_rows
         for n in range(self.n_columns):
             question = new_question(min([self.difficulty, n+1]), 1)
             self.col_questions.append(question)

@@ -140,7 +140,6 @@ class QuizWindow(QMainWindow):
         self.layout.addWidget(self.bottomrow)
 
     def box_clicked(self, column:int, row:int):
-        print(f"{column}, {row}")
         self.search_window = SearchBox(self, [x.fullname for x in self.quiz.validation_list], column, row)
         self.search_window.show()
 
@@ -184,11 +183,11 @@ class SearchBox(QMainWindow):
         self.col = col
         self.row = row
         widget = QWidget()
-        layout = QVBoxLayout()
+        self.layout = QVBoxLayout()
         
         label_text = self.parent.quiz.print_cell_question(col, row)
         label_widget = QLabel(label_text)
-        layout.addWidget(label_widget)
+        self.layout.addWidget(label_widget)
 
         self.linewidget = QLineEdit()
         self.linewidget.returnPressed.connect(self.name_driver)
@@ -198,11 +197,11 @@ class SearchBox(QMainWindow):
         completer.setFilterMode(QtCore.Qt.MatchFlag.MatchContains)
         self.linewidget.setCompleter(completer)
 
-        layout.addWidget(self.linewidget)
+        self.layout.addWidget(self.linewidget)
 
-        layout.addWidget(self.bottom_row())
+        self.layout.addWidget(self.bottom_row())
 
-        widget.setLayout(layout)
+        widget.setLayout(self.layout)
         self.setCentralWidget(widget)
     
     def bottom_row(self):
@@ -221,13 +220,22 @@ class SearchBox(QMainWindow):
         return widget
     
     def name_driver(self):
-        self.parent.answer_given(self.linewidget.text().lower(), self.col, self.row)
-        self.exit_window()
+        text_input = self.linewidget.text().lower()
+        dataclass:MyDataClass = self.parent.quiz.string_to_dataclass(remove_accents(text_input))
+        if dataclass != None and dataclass not in self.parent.quiz.given_answers.values():
+            self.parent.answer_given(text_input, self.col, self.row)
+            self.exit_window()
+        else:
+            if hasattr(self, "label"):
+                self.layout.removeWidget(self.label)
+            if dataclass == None:
+                self.label = QLabel(f"Unknown input: {str(text_input)}")
+            elif dataclass in self.parent.quiz.given_answers.values():
+                self.label = QLabel(f"{str(dataclass)} has already been used as an answer!")
+            self.layout.addWidget(self.label)       
     
     def exit_window(self):
         self.parent.search_window = None
-
-
 
 
 def new_exit_button() -> QPushButton:
