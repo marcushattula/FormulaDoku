@@ -12,6 +12,7 @@ class QuizGame():
         """
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
+        self.validation_list: list[MyDataClass] = [] # List of objects to validate against, overridden during inheritance.
         self.solved_cells = [] # List of solved cells, tuple (col, row)
         self.given_answers = {} # List of given correct answers, same answer cannot be used multiple times
         self.n_columns = 3 # Number of columns
@@ -19,6 +20,8 @@ class QuizGame():
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
         self.archive = archive # ArchiveReader class, containing result data
         self.guesses = self.n_columns * self.n_rows # Number of guesses
+        self.col_questions: list[Question] = [] # List of column questions
+        self.row_questions: list[Question] = [] # List of row questions
 
     def solved(self) -> bool:
         """
@@ -89,13 +92,15 @@ class QuizGame():
             Adds questions to self.col_questions and self.row_questions
             Returns None
         """
-        self.col_questions = []
-        self.row_questions = []
         self.guesses = self.n_columns * self.n_rows
-        for n in range(self.n_columns):
+        n  = 0
+        while n < self.n_columns:
             question = new_question(min([self.difficulty, n+1]), 1)
-            self.col_questions.append(question)
-        for n in range(self.n_rows):
+            if question not in self.col_questions:
+                self.col_questions.append(question)
+                n += 1
+        n = 0
+        while n < self.n_rows:
             valid_question = False
             while not valid_question:
                 question = new_question(min([self.difficulty, n+1]), 2)
@@ -104,8 +109,38 @@ class QuizGame():
                     if not question.validate_question(col_question, self.validation_list):
                         valid_question = False
                         break
-            self.row_questions.append(question)
+            if question not in self.row_questions:
+                self.row_questions.append(question)
+                n += 1
 
+    def full_validation(self) -> bool:
+        """
+        Full validation of questions.
+        Parameters:
+            None
+        Outputs:
+            all_unique: bool; True if every question can have at least one unique answer, else False
+        """
+
+        def get_all_mutuals_list() -> dict:
+            x = []
+            for i in range(len(self.col_questions)):
+                col_question = self.col_questions[i]
+                for j in range(len(self.row_questions)):
+                    row_question = self.row_questions[j]
+                    valid_answers = col_question.get_mutual_answers(row_question, self.validation_list)
+                    x.append((i, j, valid_answers))
+            return sorted(x, key=lambda x: len(x[2]))
+
+        valid_answers_tuples = get_all_mutuals_list()
+        for answer_tuple in valid_answers_tuples:
+            used_answers = []
+            for obj in answer_tuple[2]:
+                if obj in used_answers: # Answer has already been used -> continue validation
+                    pass
+                elif (self.check_cell_pair_answer(answer_tuple[0], answer_tuple[1], obj)):
+                    pass
+    
     def select_cell(self, cellname:str) -> tuple[int,int]:
         """
         Return the coordinates of a cell based on its name.
@@ -147,9 +182,23 @@ class QuizGame():
         row_question = self.row_questions[row]
         return str(col_question) + " + " + str(row_question)
 
-    def answer_question(self, col:int, row:int, answer:MyDataClass) -> bool:
+    def check_cell_pair_answer(self, col:int, row:int, answer:MyDataClass) -> bool:
         """
         Check if given object is a correct answer for question. Answer must satisfy both column and row questions.
+        Parameters:
+            col: int; column id
+            row: int; row id
+            answer: MyDataClass; given answer
+        Outputs:
+            b: bool; True if answer satisfies both questions, else False
+        """
+        col_question = self.col_questions[col]
+        row_question = self.row_questions[row]
+        return col_question.check_question(answer) and row_question.check_question(answer)
+
+    def answer_question(self, col:int, row:int, answer:MyDataClass) -> bool:
+        """
+        User gives an answer. Check if correct, and process game
         Parameters:
             col: int; column id
             row: int; row id
@@ -158,11 +207,9 @@ class QuizGame():
             b: bool; True if both questions are satisfied by answer, else False
         """
         assert answer not in self.given_answers.values(), f"{str(answer)} has already been given as an answer!"
-        col_question = self.col_questions[col]
-        row_question = self.row_questions[row]
         assert self.guesses > 0, "No guesses remaining!"
         self.guesses -= 1
-        if col_question.check_question(answer) and row_question.check_question(answer):
+        if self.check_cell_pair_answer(col, row, answer):
             self.solved_cells.append((col, row))
             self.given_answers[(col, row)] = answer
             return True
