@@ -7,25 +7,28 @@ class ArchiveReader():
     Class for reading and storing data from archive.
     """
 
-    def __init__(self, archive_path:str=None):
+    def __init__(self, archive_path:str=None, skip=True):
         """
         Run main commands
         """
-        try:
+        if not skip:
+            try:
+                self.db_path = TEMP_DIRPATH
+                self.reset_db()
+            except AssertionError as e:
+                print(e)
+            except Exception as e:
+                raise e
+            self.db_path = self.init_db(archive_path=archive_path)
+        else:
             self.db_path = TEMP_DIRPATH
-            self.reset_db()
-        except AssertionError as e:
-            print(e)
-        except Exception as e:
-            raise e
-        self.db_path = self.init_db()
         self.drivers = self.open_drivers()
         self.constructors = self.open_constructors()
         self.circuits = self.open_circuits()
         self.races = self.open_races()
         self.read_driver_results()
 
-    def init_db(self, archive_path:str=None, target_path:str=None) -> None:
+    def init_db(self, archive_path:str=None, target_path:str=None) -> str:
         """
         Initialize db from archive file.
         Parameters:
