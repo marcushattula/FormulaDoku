@@ -61,7 +61,10 @@ class MainWindow(QMainWindow):
         Outputs:
             Opens a new window with quiz
         """
-        self.quizwindow = DriverQuizWindow(self, 1, 3, 3)
+        difficulty = int(self.difficulty_box.currentIndex()) + 1
+        n_cols = int(self.columns_box.currentText())
+        n_rows = int(self.rows_box.currentText())
+        self.quizwindow = DriverQuizWindow(self, difficulty, n_cols, n_rows)
         self.quizwindow.show()
 
 
@@ -119,15 +122,18 @@ class QuizWindow(QMainWindow):
                 else:
                     grid_widget = QPushButton()
                     grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
-                    grid_widget.clicked.connect(lambda _, c=col, r=row: self.box_clicked(c-1, r-1))
                     grid_widget.setStyleSheet('background-color : rgba(0, 0, 0, 100); border :1px solid rgba(0, 0, 0, 150)')
-                    if (col-1, row-1) in self.quiz.solved_cells:
+                    if (col-1, row-1) in self.quiz.solved_cells: # Cell has been solved => box is green, add given answer and diable
                         grid_widget.setStyleSheet("background-color: green")
                         grid_widget.setEnabled(False)
                         grid_widget.setText(str(self.quiz.given_answers[(col-1, row-1)]))
-                    if (col-1, row-1) not in self.quiz.solved_cells and self.quiz.guesses == 0:
-                        grid_widget.setStyleSheet("background-color: red")
-                        grid_widget.setEnabled(False)
+                    if self.quiz.guesses == 0: # No guesses remaining => connect to answer box and if unanswered => make red
+                        if (col-1, row-1) not in self.quiz.solved_cells:
+                            grid_widget.setStyleSheet("background-color: red")
+                        grid_widget.setEnabled(True)
+                        grid_widget.clicked.connect(lambda _, c=col, r=row: self.answer_box_clicked(c-1, r-1))
+                    else:
+                        grid_widget.clicked.connect(lambda _, c=col, r=row: self.box_clicked(c-1, r-1))
                 grid_layout.addWidget(grid_widget, row, col)
         grid.setLayout(grid_layout)
         return grid
@@ -142,6 +148,14 @@ class QuizWindow(QMainWindow):
     def box_clicked(self, column:int, row:int):
         self.search_window = SearchBox(self, [x.fullname for x in self.quiz.validation_list], column, row)
         self.search_window.show()
+
+    def answer_box_clicked(self, column:int, row:int):
+        if (column, row) in self.quiz.given_answers:
+            given_answer = self.quiz.given_answers[(column, row)]
+        else:
+            given_answer = None
+        self.answer_window = AnswerBox(self, given_answer, column, row)
+        self.answer_window.show()
 
     def answer_given(self, given_answer:str, column:int, row:int):
         dataclass:MyDataClass = self.quiz.string_to_dataclass(remove_accents(given_answer))
@@ -236,6 +250,57 @@ class SearchBox(QMainWindow):
     
     def exit_window(self):
         self.parent.search_window = None
+
+
+class AnswerBox(QMainWindow):
+
+    def __init__(self, parent:QuizWindow, given_answer, column, row):
+        super().__init__()
+        layout = QVBoxLayout()
+        widget = QWidget()
+        self.parent = parent
+        col_question = self.parent.quiz.col_questions[column]
+        row_question = self.parent.quiz.row_questions[row]
+
+        if given_answer and isinstance(given_answer, MyDataClass):
+            info_widget = self.obj_line(given_answer, col_question.question[3], row_question.question[3])
+            layout.addWidget(info_widget)
+        for obj in col_question.get_mutual_answers(row_question, self.parent.quiz.validation_list):
+            info_widget = self.obj_line(obj, col_question.question[3], row_question.question[3])
+            layout.addWidget(info_widget)
+
+        layout.addWidget(self.bottom_row())
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+        
+    def obj_line(self, object:MyDataClass, field1:str, field2:str):
+        widget = QWidget()
+        layout = QHBoxLayout()
+
+        label1 = QLabel(str(object))
+        label2 = QLabel(str(object.get_field(field1)))
+        label3 = QLabel(str(object.get_field(field2)))
+
+        layout.addWidget(label1)
+        layout.addWidget(label2)
+        layout.addWidget(label3)
+
+        widget.setLayout(layout)
+        return widget
+    
+    def bottom_row(self):
+        widget = QWidget()
+        layout = QHBoxLayout()
+
+        exit_button = QPushButton("Close")
+        exit_button.clicked.connect(self.exit_window)
+
+        layout.addWidget(exit_button)
+        widget.setLayout(layout)
+        return widget
+
+    def exit_window(self):
+        self.parent.answer_window = None
 
 
 def new_exit_button() -> QPushButton:

@@ -98,6 +98,12 @@ class Question():
         """
         return self.question[0] + ": " + str(self.question[1])
 
+    def __hash__(self):
+        return hash(str(self))
+    
+    def __eq__(self, other_question):
+        return str(self) == str(other_question)
+
     def choose_question(self, difficulty:int, setseed=None):
         """
         Choose a question depending on difficulty. One question cannot be selected multiple times.
@@ -105,17 +111,14 @@ class Question():
             difficulty: int; difficulty of question, 1 = Easy, 2 = Medium, 3 = Hard
             (Optional) setseed: int; use predetermined seed for question selection. Default = None = Random
         """
-        if setseed and isinstance(setseed, int):
+        if setseed and isinstance(setseed, int) or setseed == None:
             random.seed(setseed)
         if difficulty == 1:
             self.question = random.choice(self.questions1)
-            self.questions1.pop(self.questions1.index(self.question))
         elif difficulty == 2:
             self.question = random.choice(self.questions2)
-            self.questions2.pop(self.questions2.index(self.question))
         elif difficulty == 3:
             self.question = random.choice(self.questions3)
-            self.questions3.pop(self.questions3.index(self.question))
         
     def check_question(self, answer:MyDataClass) -> bool:
         """
@@ -125,7 +128,10 @@ class Question():
         Outputs:
             correct: bool; True if correct, False if incorrect
         """
-        return self.question[2](self.question[1], answer)
+        if hasattr(self, "__all_answers"):
+            return answer in self.__all_answers
+        else:
+            return self.question[2](self.question[1], answer)
 
     def validate_question(self, otherQuestion, candidates:list[MyDataClass]) -> bool:
         """
@@ -140,21 +146,65 @@ class Question():
             ans1 = self.check_question(candidate)
             ans2 = otherQuestion.check_question(candidate)
             if ans1 and ans2:
-                self.example_answer = candidate
                 return True
         return False
 
+    def get_all_answers(self, candidates:list[MyDataClass]) -> list[MyDataClass]:
+        """
+        Get all valid answers to this question from candidate list.
+        Parameters:
+            candidates: list[MyDataClass]; list of MyDataClass objects that are possible answers to question
+        Outputs:
+            filtered_list: list[MyDataClass]; filtered list of candidates that are correct answers
+        """
+        if hasattr(self, "__all_answers"):
+            return self.__all_answers
+        else:
+            self.__all_answers = []
+            for candidate in candidates:
+                if self.check_question(candidate):
+                    self.__all_answers.append(candidate)
+            return self.get_all_answers()
+    
+    def get_mutual_answers(self, other_question, candidates:list[MyDataClass]) -> list[MyDataClass]:
+        """
+        Get all correct answers to two mutual questions form list of candidate answers.
+        Parameters:
+            other_question: Question; the other question to be filtered for
+            candidates: list[MyDataClass]; list of candidate answers
+        Outputs:
+            Sets self.__mutual_answers[other_question] to list of valid answers
+            Sets other_question.__mutual_answers[self] to list of valid answers
+            Returns list of valid answers
+        """
+        if (hasattr(self, "__mutual_answers") and other_question in self.__mutual_answers):
+            other_question.__mutual_answers[self] = self.__mutual_answers[other_question]
+            return self.__mutual_answers[other_question]
+        elif (hasattr(other_question, "__mutual_answers") and self in other_question.__mutual_answers):
+            other_question.__mutual_answers[self] = self.__mutual_answers[other_question]
+            return other_question.__mutual_answers[self]
+        else:
+            self.__mutual_answers = {}
+            self.__mutual_answers[other_question] = []
+            other_question.__mutual_answers = {}
+            other_question.__mutual_answers[self] = []
+            for candidate in candidates:
+                if self.check_question(candidate) and other_question.check_question(candidate):
+                    self.__mutual_answers[other_question].append(candidate)
+                    other_question.__mutual_answers[self].append(candidate)
+            return self.__mutual_answers[other_question]
+
 class DriverAchievmentQuestion(Question):
     questions1 = [ # Easy questions
-        ("Race wins", 5, numberWins),
-        ("World championships", 1, numberChampionships),
-        ("Race entries", 20, numberEntries),
-        ("Pole positions", 5, numberPoles),
-        ("Number of wins in a season", 3, numberSeasonWins),
+        ("Race wins", 5, numberWins, "wins"),
+        ("World championships", 1, numberChampionships, "championships"),
+        ("Race entries", 20, numberEntries, "entries"),
+        ("Pole positions", 5, numberPoles, "poles"),
         ]
     questions2 = [ # Medium questions
         ("Number of podiums in a season", 6, numberSeasonPodiums),
         ("Number of points during career", 300, numberPoints),
+        ("Number of wins in a season", 3, numberSeasonWins, "lul"),
         ("Podiums", 10, numberPodiums),
     ]
     questions3 = [ # Hard questions
@@ -167,20 +217,20 @@ class DriverAchievmentQuestion(Question):
 
 class DriverDataQuestion(Question):
     questions1 = [ # Easy questions
-        ("Driver nationality", "German", driverNationality),
-        ("Driver nationality", "British", driverNationality),
-        ("Driver nationality", "Italian", driverNationality),
-        ("Driver nationality", "French", driverNationality),
-        ("Driver nationality", "Brazilian", driverNationality)
+        ("Driver nationality", "German", driverNationality, "nationality"),
+        ("Driver nationality", "British", driverNationality, "nationality"),
+        ("Driver nationality", "Italian", driverNationality, "nationality"),
+        ("Driver nationality", "French", driverNationality, "nationality"),
+        ("Driver nationality", "Brazilian", driverNationality, "nationality")
     ]
     questions2 = [ # Medium questions
-        ("Driver nationality", "American", driverNationality),
-        ("Driver nationality", "Australian", driverNationality),
-        ("Driver nationality", "Spanish", driverNationality),
+        ("Driver nationality", "American", driverNationality, "nationality"),
+        ("Driver nationality", "Australian", driverNationality, "nationality"),
+        ("Driver nationality", "Spanish", driverNationality, "nationality"),
     ]
     questions3 = [ # Hard questions
-        ("Driver nationality", "Japanese", driverNationality),
-        ("Driver nationality", "Canadian", driverNationality),
+        ("Driver nationality", "Japanese", driverNationality, "nationality"),
+        ("Driver nationality", "Canadian", driverNationality, "nationality"),
     ]
 
     def __init__(self, difficulty:int) -> None:
@@ -189,18 +239,18 @@ class DriverDataQuestion(Question):
 
 class DriverTeamQuestion(Question):
     questions1 = [ # Easy questions
-        ("Driven for team", "Williams", driverTeam),
-        ("Driven for team", "McLaren", driverTeam),
-        ("Driven for team", "Ferrari", driverTeam)
+        ("Driven for team", "Williams", driverTeam, "teams"),
+        ("Driven for team", "McLaren", driverTeam, "teams"),
+        ("Driven for team", "Ferrari", driverTeam, "teams")
     ]
     questions2 = [ # Medium questions
-        ("Driven for team", "Mercedes", driverTeam),
-        ("Driven for team", "Red Bull", driverTeam),
-        ("Driven for team", "Renault", driverTeam)
+        ("Driven for team", "Mercedes", driverTeam, "teams"),
+        ("Driven for team", "Red Bull", driverTeam, "teams"),
+        ("Driven for team", "Renault", driverTeam, "teams")
     ]
     questions3 = [ # Hard questions
-        ("Driven for team", "Sauber", driverTeam),
-        ("Driven for team", "Toro Rosso", driverTeam),
+        ("Driven for team", "Sauber", driverTeam, "teams"),
+        ("Driven for team", "Toro Rosso", driverTeam, "teams"),
     ]
 
     def __init__(self, difficulty:int) -> None:
