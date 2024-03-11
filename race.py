@@ -1,4 +1,5 @@
 from mydataclass import MyDataClass
+from circuit import Circuit
 
 RACE_DATA_FIELDS = ["raceId","year","round","circuitId",
                     "name","date","time","url",
@@ -22,3 +23,15 @@ class Race(MyDataClass):
         assert len(data) == len(RACE_DATA_FIELDS), f"Unsupported number of fields! Must be {len(RACE_DATA_FIELDS)}, found {len(data)}!"
         for i in range(len(data)):
             setattr(self,RACE_DATA_FIELDS[i], data[i])
+    
+    def add_circuit(self, circuit:Circuit):
+        """
+        Adds given circuit to self.circuit
+        Parameters:
+            circuit: Circuit; Circuit object to be added to this object
+        Outputs:
+            Sets self.circuit to circuit if circuit is of correct instance
+        """
+        assert isinstance(circuit, Circuit), "Circuit parameter must be of type Circuit!"
+        self.circuit = circuit
+    

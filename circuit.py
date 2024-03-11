@@ -18,3 +18,4 @@ class Circuit(MyDataClass):
         assert len(data) == len(CIRCUIT_DATA_FIELDS), f"Unsupported number of fields! Must be {len(CIRCUIT_DATA_FIELDS)}, found {len(data)}!"
         for i in range(len(data)):
             setattr(self,CIRCUIT_DATA_FIELDS[i], data[i])
+    

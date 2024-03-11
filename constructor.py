@@ -31,3 +31,4 @@ class Constructor(MyDataClass):
         assert len(data) == len(CONSTRUCTOR_DATA_FIELDS), f"Unsupported number of fields! Must be {len(CONSTRUCTOR_DATA_FIELDS)}, found {len(data)}!"
         for i in range(len(data)):
             setattr(self,CONSTRUCTOR_DATA_FIELDS[i], data[i])
+    
