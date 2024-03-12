@@ -18,6 +18,7 @@ class QuizGame():
         self.n_columns = 3 # Number of columns
         self.n_rows = 3 # Number of rows
         self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
+        self.forfeit = False # Flag if player has forfeited game
         self.archive = archive # ArchiveReader class, containing result data
         self.guesses = self.n_columns * self.n_rows # Number of guesses
         self.col_questions: list[Question] = [] # List of column questions
@@ -32,6 +33,16 @@ class QuizGame():
             b: bool; True if game is solved, else False
         """
         return len(self.solved_cells) == self.n_columns*self.n_rows
+
+    def game_ended(self) -> bool:
+        """
+        Check if game has ended (no lives or all cells solved or forfeited)
+        Parameters:
+            None
+        Outputs:
+            b: bool; True if game has ended, else false
+        """
+        return self.guesses == 0 or self.forfeit or self.solved()
 
     def set_n_columns(self, n:int) -> None:
         """
@@ -227,7 +238,7 @@ class QuizGame():
             Returns None
         """
         self.print_questions()
-        while not self.forfeit and self.guesses > 0:
+        while not self.game_ended():
             # Get user input. May be cell or cell and answer.
             user_input1 = self.get_user_input(1)
             if user_input1 == None: # User gave invalid answer -> Start over
@@ -263,8 +274,7 @@ class QuizGame():
             Plays the game in the terminal. Outputs and receives data in terminal.
             Returns None
         """
-        self.forfeit = False # Placeholder
-        while self.guesses > 0 and not self.solved() and not self.forfeit:
+        while not self.game_ended():
             self.user_turn()
         print(f"Game over! You answered {len(self.solved_cells)} questions correctly!")
 

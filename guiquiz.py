@@ -126,7 +126,7 @@ class QuizWindow(QMainWindow):
                         grid_widget.setStyleSheet("background-color: green")
                         grid_widget.setEnabled(False)
                         grid_widget.setText(str(self.quiz.given_answers[(col-1, row-1)]))
-                    if self.quiz.guesses == 0: # No guesses remaining => connect to answer box and if unanswered => make red
+                    if self.quiz.game_ended():
                         if (col-1, row-1) not in self.quiz.solved_cells:
                             grid_widget.setStyleSheet("background-color: red")
                         grid_widget.setEnabled(True)
@@ -178,6 +178,7 @@ class QuizWindow(QMainWindow):
     
     def give_up_button_clicked(self):
         self.quiz.forfeit = True
+        self.update_grid()
         
 
 class DriverQuizWindow(QuizWindow):
