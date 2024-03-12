@@ -1,6 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QFileDialog, QGridLayout, QVBoxLayout, QHBoxLayout, QTableWidget, QTableWidgetItem, QDialogButtonBox, QDialog, QLabel, QComboBox
-from PyQt6.QtGui import QPixmap, QColor, QPainter, QImage, QPen, QFont
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea
 from PyQt6 import QtCore
 
 from globals import *
@@ -256,6 +255,7 @@ class AnswerBox(QMainWindow):
 
     def __init__(self, parent:QuizWindow, given_answer, column, row):
         super().__init__()
+        scroll = QScrollArea()
         layout = QVBoxLayout()
         widget = QWidget()
         self.parent = parent
@@ -271,7 +271,13 @@ class AnswerBox(QMainWindow):
 
         layout.addWidget(self.bottom_row())
         widget.setLayout(layout)
-        self.setCentralWidget(widget)
+
+        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(widget)
+
+        self.setCentralWidget(scroll)
         
     def obj_line(self, object:MyDataClass, field1:str, field2:str):
         widget = QWidget()
