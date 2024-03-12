@@ -2,9 +2,7 @@ import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea
 from PyQt6 import QtCore
 
-from globals import *
-from quizgame import QuizGame, DriverQuiz
-from readArchive import ArchiveReader
+from quizgame import *
 
 GUI_SCALE = 3
 

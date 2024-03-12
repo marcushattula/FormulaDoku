@@ -1,4 +1,9 @@
 from globals import *
+from mydataclass import MyDataClass
+from driver import Driver
+from circuit import Circuit
+from constructor import Constructor
+from race import Race
 import shutil
 import csv
 
@@ -174,6 +179,7 @@ class ArchiveReader():
                     year = race.year
                     driver = find_single_object_by_field_value(self.drivers, "driverId", row[2])
                     constructor = find_single_object_by_field_value(self.constructors, "constructorId", row[3])
+                    race.add_entrant(constructor, driver)
                     if constructor not in driver.teams:
                         driver.teams.append(constructor)
                     if driver not in constructor.drivers:
@@ -192,9 +198,9 @@ class ArchiveReader():
                     driver.career_points += float(row[9])
                     driver.add_to_season_data(year, "points", float(row[9]))
                 line_count += 1
-        sprint_results_csv = os.path.join(self.db_path, "sprint_results.csv")
 
         # Read sprint results
+        sprint_results_csv = os.path.join(self.db_path, "sprint_results.csv")
         with open(sprint_results_csv, encoding='utf-8') as csv_file:
             csv_reader = csv.reader(csv_file, delimiter=',')
             line_count = 0
@@ -224,6 +230,12 @@ class ArchiveReader():
         for year in champions_dict:
             champions_dict[year].championships += 1
 
+    def read_race_data(self) -> None:
+        """
+        Reads self.races and adds appropriate data to different objects
+        """
+        pass
+
     def get_category(self, listname:str, categoryname:str) -> list:
         """
         Return a list mapped to a certain category of said list (e.g. the forename of every driver).
@@ -239,7 +251,7 @@ class ArchiveReader():
         searchlist = getattr(self, listname)
         returnlist = []
         if listname == "drivers":
-            assert categoryname in DRIVER_DATA_FIELDS or categoryname in DRIVER_CAREER_DATA or categoryname == "fullname", f"Unknown field {categoryname}!"
+            assert hasattr(searchlist[0], categoryname), f"Unknown field {categoryname}!"
             for obj in searchlist:
                 returnlist.append(getattr(obj, categoryname))
         return returnlist

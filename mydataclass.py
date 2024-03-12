@@ -9,6 +9,12 @@ class MyDataClass():
         """
         self.data_fields = []
     
+    def __eq__(self, other_obj):
+        return str(self) == str(other_obj)
+    
+    def __hash__(self):
+        return hash(str(self))
+    
     def get_field(self, field:str):
         """
         Fetch a value of a certain field. Assertion protected.

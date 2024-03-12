@@ -1,5 +1,4 @@
 from mydataclass import MyDataClass
-from race import Race
 
 DRIVER_DATA_FIELDS = ["driverId","driverRef","number","code","forename","surname","dob","nationality","url"]
 DRIVER_CAREER_DATA = ["championships","wins","podiums","career_points","poles","entries","sprint_wins"]

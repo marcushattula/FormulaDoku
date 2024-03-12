@@ -1,5 +1,5 @@
 import random
-from globals import *
+from mydataclass import MyDataClass
 
 def numberWins(n:int, answer:MyDataClass) -> bool:
     """

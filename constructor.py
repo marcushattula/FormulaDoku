@@ -15,6 +15,9 @@ class Constructor(MyDataClass):
             setattr(self, data_field, None)
         self.drivers = []
     
+    def __str__(self):
+        return self.name
+    
     def read_data(self, data:list[str]):
         """
         Map data from driver csv to this driver.

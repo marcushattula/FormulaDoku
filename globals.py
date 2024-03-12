@@ -1,11 +1,19 @@
 import os
-from mydataclass import MyDataClass
-from driver import Driver, DRIVER_CAREER_DATA, DRIVER_DATA_FIELDS
-from constructor import Constructor
-from circuit import Circuit
-from race import Race
-from question import new_question, Question
 from unicodedata import normalize
+from mydataclass import MyDataClass
+
+PROJECT_NAME = "FormulaDoku"
+
+GLOBALSFILE = os.path.abspath(__file__) # Path to this file
+HOMEDIR = os.path.dirname(GLOBALSFILE) # Path to home directory, that is the parent directory of this file
+
+TEMP_DIRNAME = "temps" # Name of folder where to output extracted data from archive
+TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive directory path
+
+ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip") # Path to archive file
+DEFAULT_PICTURE = os.path.join(HOMEDIR, "default.jpg")
+
+
 
 def remove_accents(input_str:str):
     """
@@ -18,17 +26,6 @@ def remove_accents(input_str:str):
     nfkd_form = normalize('NFKD', input_str)
     only_ascii = nfkd_form.encode('ASCII', 'ignore')
     return str(only_ascii, 'utf-8')
-
-PROJECT_NAME = "FormulaDoku"
-
-GLOBALSFILE = os.path.abspath(__file__) # Path to this file
-HOMEDIR = os.path.dirname(GLOBALSFILE) # Path to home directory, that is the parent directory of this file
-
-TEMP_DIRNAME = "temps" # Name of folder where to output extracted data from archive
-TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive directory path
-
-ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip") # Path to archive file
-DEFAULT_PICTURE = os.path.join(HOMEDIR, "default.jpg")
 
 def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> list[MyDataClass]:
     """
