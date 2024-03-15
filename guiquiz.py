@@ -254,21 +254,34 @@ class AnswerBox(QMainWindow):
 
     def __init__(self, parent:QuizWindow, given_answer, column, row):
         super().__init__()
+        layout = QVBoxLayout()
+        widget = QWidget()
+        self.setFixedWidth(GUI_SCALE*300)
+        self.parent = parent
+        
+        scrollwidget = self.scrollwidget(column, row, given_answer)
+        layout.addWidget(scrollwidget)
+
+        bottom_row = self.bottom_row()
+        layout.addWidget(bottom_row)
+
+        widget.setLayout(layout)
+
+        self.setCentralWidget(widget)
+    
+    def scrollwidget(self, column:int, row:int, given_answer) -> QScrollArea:
         scroll = QScrollArea()
         layout = QVBoxLayout()
         widget = QWidget()
-        self.parent = parent
+
         col_question = self.parent.quiz.col_questions[column]
         row_question = self.parent.quiz.row_questions[row]
 
-        if given_answer and isinstance(given_answer, MyDataClass):
-            info_widget = self.obj_line(given_answer, col_question.question[3], row_question.question[3])
-            layout.addWidget(info_widget)
+        layout.addWidget(self.top_row(col_question.question[3], row_question.question[3]))
         for obj in col_question.get_mutual_answers(row_question, self.parent.quiz.validation_list):
             info_widget = self.obj_line(obj, col_question.question[3], row_question.question[3])
             layout.addWidget(info_widget)
-
-        layout.addWidget(self.bottom_row())
+        
         widget.setLayout(layout)
 
         scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
@@ -276,9 +289,24 @@ class AnswerBox(QMainWindow):
         scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
-        self.setCentralWidget(scroll)
-        
-    def obj_line(self, object:MyDataClass, field1:str, field2:str):
+        return scroll
+
+    def top_row(self, field1:str, field2:str) -> QWidget:
+        widget = QWidget()
+        layout = QHBoxLayout()
+
+        label1 = QLabel("Valid answer")
+        label2 = QLabel(field1.capitalize())
+        label3 = QLabel(field2.capitalize())
+
+        layout.addWidget(label1)
+        layout.addWidget(label2)
+        layout.addWidget(label3)
+
+        widget.setLayout(layout)
+        return widget
+
+    def obj_line(self, object:MyDataClass, field1:str, field2:str) -> QWidget:
         widget = QWidget()
         layout = QHBoxLayout()
 
