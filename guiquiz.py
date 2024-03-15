@@ -256,7 +256,6 @@ class AnswerBox(QMainWindow):
         super().__init__()
         layout = QVBoxLayout()
         widget = QWidget()
-        self.setFixedWidth(GUI_SCALE*300)
         self.parent = parent
         
         scrollwidget = self.scrollwidget(column, row, given_answer)
@@ -271,16 +270,17 @@ class AnswerBox(QMainWindow):
     
     def scrollwidget(self, column:int, row:int, given_answer) -> QScrollArea:
         scroll = QScrollArea()
-        layout = QVBoxLayout()
+        layout = QGridLayout()
         widget = QWidget()
 
         col_question = self.parent.quiz.col_questions[column]
         row_question = self.parent.quiz.row_questions[row]
 
-        layout.addWidget(self.top_row(col_question.question[3], row_question.question[3]))
+        i = 0
+        self.top_row(col_question, row_question, layout, i)
         for obj in col_question.get_mutual_answers(row_question, self.parent.quiz.validation_list):
-            info_widget = self.obj_line(obj, col_question.question[3], row_question.question[3])
-            layout.addWidget(info_widget)
+            i += 1
+            self.obj_line(obj, col_question, row_question, layout, i)
         
         widget.setLayout(layout)
 
@@ -291,36 +291,34 @@ class AnswerBox(QMainWindow):
 
         return scroll
 
-    def top_row(self, field1:str, field2:str) -> QWidget:
-        widget = QWidget()
-        layout = QHBoxLayout()
+    def top_row(self, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
+        field1 = question1.question[3]
+        field2 = question2.question[3]
 
         label1 = QLabel("Valid answer")
         label2 = QLabel(field1.capitalize())
         label3 = QLabel(field2.capitalize())
 
-        layout.addWidget(label1)
-        layout.addWidget(label2)
-        layout.addWidget(label3)
+        layout.addWidget(label1, layout_row, 0)
+        layout.addWidget(label2, layout_row, 1)
+        layout.addWidget(label3, layout_row, 2)
 
-        widget.setLayout(layout)
-        return widget
-
-    def obj_line(self, object:MyDataClass, field1:str, field2:str) -> QWidget:
-        widget = QWidget()
-        layout = QHBoxLayout()
-
+    def obj_line(self, object:MyDataClass, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
+        field1 = question1.question[3]
+        field2 = None if len(question1.question) < 5 else question1.question[4]
+        field3 = None if len(question1.question) < 6 else question1.question[5]
+        field4 = question2.question[3]
+        field5 = None if len(question2.question) < 5 else question2.question[4]
+        field6 = None if len(question2.question) < 6 else question2.question[5]
+        
         label1 = QLabel(str(object))
-        label2 = QLabel(str(object.get_field(field1)))
-        label3 = QLabel(str(object.get_field(field2)))
+        label2 = QLabel(str(object.map_to_string(field1, field2=field2, field3=field3)))
+        label3 = QLabel(str(object.map_to_string(field4, field2=field5, field3=field6)))
 
-        layout.addWidget(label1)
-        layout.addWidget(label2)
-        layout.addWidget(label3)
-
-        widget.setLayout(layout)
-        return widget
-    
+        layout.addWidget(label1, layout_row, 0)
+        layout.addWidget(label2, layout_row, 1)
+        layout.addWidget(label3, layout_row, 2)
+  
     def bottom_row(self):
         widget = QWidget()
         layout = QHBoxLayout()

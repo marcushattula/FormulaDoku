@@ -202,13 +202,13 @@ class DriverAchievmentQuestion(Question):
         ("Pole positions", 5, numberPoles, "poles"),
         ]
     questions2 = [ # Medium questions
-        ("Number of podiums in a season", 6, numberSeasonPodiums),
-        ("Number of points during career", 300, numberPoints),
-        ("Number of wins in a season", 3, numberSeasonWins, "lul"),
-        ("Podiums", 10, numberPodiums),
+        ("Number of podiums in a season", 6, numberSeasonPodiums, "season_data", "wins"),
+        ("Number of points during career", 300, numberPoints, "points"),
+        ("Number of wins in a season", 3, numberSeasonWins, "season_data", "wins"),
+        ("Podiums", 10, numberPodiums, "season_data", "podiums"),
     ]
     questions3 = [ # Hard questions
-        ("Sprint wins", 1, numberSprintWins),
+        ("Sprint wins", 1, numberSprintWins, "sprint_wins"),
     ]
 
     def __init__(self, difficulty:int) -> None:
@@ -239,18 +239,18 @@ class DriverDataQuestion(Question):
 
 class DriverTeamQuestion(Question):
     questions1 = [ # Easy questions
-        ("Driven for team", "Williams", driverTeam, "teams"),
-        ("Driven for team", "McLaren", driverTeam, "teams"),
-        ("Driven for team", "Ferrari", driverTeam, "teams")
+        ("Driven for team", "Williams", driverTeam, "teams", "name"),
+        ("Driven for team", "McLaren", driverTeam, "teams", "name"),
+        ("Driven for team", "Ferrari", driverTeam, "teams", "name")
     ]
     questions2 = [ # Medium questions
-        ("Driven for team", "Mercedes", driverTeam, "teams"),
-        ("Driven for team", "Red Bull", driverTeam, "teams"),
-        ("Driven for team", "Renault", driverTeam, "teams")
+        ("Driven for team", "Mercedes", driverTeam, "teams", "name"),
+        ("Driven for team", "Red Bull", driverTeam, "teams", "name"),
+        ("Driven for team", "Renault", driverTeam, "teams", "name")
     ]
     questions3 = [ # Hard questions
-        ("Driven for team", "Sauber", driverTeam, "teams"),
-        ("Driven for team", "Toro Rosso", driverTeam, "teams"),
+        ("Driven for team", "Sauber", driverTeam, "teams", "name"),
+        ("Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
     ]
 
     def __init__(self, difficulty:int) -> None:
