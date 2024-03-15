@@ -306,14 +306,12 @@ class AnswerBox(QMainWindow):
     def obj_line(self, object:MyDataClass, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
         field1 = question1.question[3]
         field2 = None if len(question1.question) < 5 else question1.question[4]
-        field3 = None if len(question1.question) < 6 else question1.question[5]
         field4 = question2.question[3]
         field5 = None if len(question2.question) < 5 else question2.question[4]
-        field6 = None if len(question2.question) < 6 else question2.question[5]
         
         label1 = QLabel(str(object))
-        label2 = QLabel(str(object.map_to_string(field1, field2=field2, field3=field3)))
-        label3 = QLabel(str(object.map_to_string(field4, field2=field5, field3=field6)))
+        label2 = QLabel(str(object.map_to_string(field1, field2=field2)))
+        label3 = QLabel(str(object.map_to_string(field4, field2=field5)))
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)
