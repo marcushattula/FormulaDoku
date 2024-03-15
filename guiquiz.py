@@ -113,9 +113,9 @@ class QuizWindow(QMainWindow):
                 if row == 0 and col == 0:
                     grid_widget = QLabel("FormulaDoku!")
                 elif row == 0:
-                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}: {str(self.quiz.col_questions[col-1])}")
+                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}:\n{str(self.quiz.col_questions[col-1])}")
                 elif col == 0:
-                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}: {str(self.quiz.row_questions[row-1])}")
+                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{str(self.quiz.row_questions[row-1])}")
                 else:
                     grid_widget = QPushButton()
                     grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
