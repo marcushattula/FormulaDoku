@@ -18,6 +18,18 @@ class MyDataClass():
     def map_to_string(self, field1:str, field2:str=None) -> str:
         """
         Get any field of this object and map according to other fields
+        Example:
+            if self.field1 is str or int:
+                return str(self.field1)
+            elif self.field1 is list of objects [a, b, c]:
+                return "{a.field2}, {b.field2}, {c.field2}"
+            elif self.field1 is dict of dicts: {a: {field2: 1, field3: 2}, b: {field2: 3, field3: 4}}
+                return "{a}: {a[field2]}, {b}: {b[field2]}"
+        Parameters:
+            field1: str; attribute name to retrieve
+            (Optional) field2: str; subfield to map or filter by
+        Outputs:
+            s: str; string of mapped fields
         """
         assert hasattr(self, field1), f"Object {self.__class__.__name__} has no field {field1}!"
         field_value = self.get_field(field1)
