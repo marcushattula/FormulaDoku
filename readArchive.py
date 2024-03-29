@@ -179,7 +179,7 @@ class ArchiveReader():
                     year = race.year
                     driver = find_single_object_by_field_value(self.drivers, "driverId", row[2])
                     constructor = find_single_object_by_field_value(self.constructors, "constructorId", row[3])
-                    race.add_entrant(constructor, driver)
+                    race.add_race_entrant(driver, constructor, row)
                     if constructor not in driver.teams:
                         driver.teams.append(constructor)
                     if driver not in constructor.drivers:
@@ -212,6 +212,7 @@ class ArchiveReader():
                     year = race.year
                     driver = find_single_object_by_field_value(self.drivers, "driverId", row[2])
                     constructor = find_single_object_by_field_value(self.constructors, "constructorId", row[3])
+                    race.add_sprint_entrant(driver, constructor, row)
                     if row[6] == '1':
                         driver.sprint_wins += 1
                         driver.add_to_season_data(year, "sprint_wins", 1)
