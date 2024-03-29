@@ -12,7 +12,8 @@ class Driver(MyDataClass):
         """
         Initializes empty class where all fields are set to None or empty lists.
         """
-        for data_field in DRIVER_DATA_FIELDS:
+        self.data_fields = DRIVER_DATA_FIELDS
+        for data_field in self.data_fields:
             setattr(self, data_field, None)
         for data_field in DRIVER_CAREER_DATA:
             setattr(self, data_field, 0)
@@ -30,16 +31,13 @@ class Driver(MyDataClass):
         """
         Adds data from CSV to this drivers data
         """
-        assert len(data) == len(DRIVER_DATA_FIELDS), f"Unsupported number of fields! Must be {len(DRIVER_DATA_FIELDS)}, found {len(data)}!"
-        for i in range(len(data)):
-            setattr(self,DRIVER_DATA_FIELDS[i], data[i])
+        self.read_csv_data(data)
         self.fullname = self.forename + " " + self.surname
 
-    def add_to_season_data(self, year:str, field:str, value:float):
+    def add_to_season_data(self, year:int, field:str, value:float):
         """
         Adds data from a season to drivers statistics.
         """
-        assert year.isnumeric(), f"Year must be numeric, currently {year}!"
         assert isinstance(value, float) or isinstance(value, int), f"Value must be int or float, currently {type(value)}!"
         if not year in self.season_data:
             self.season_data[year] = {"wins":0,"podiums":0,"points":0,"poles":0,"entries":0,"sprint_wins":0}

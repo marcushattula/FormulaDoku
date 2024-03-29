@@ -20,15 +20,6 @@ SPRINT_RESULT_DATA_FIELDS = ["resultId","raceId","driverId","constructorId",
                       "positionOrder","points","laps","time","milliseconds",
                       "fastestLap","fastestLapTime","statusId"]
 
-POINTS_SYSTEMS = [
-     [8, 6, 4, 3, 2], # 1950 - 1959
-     [8, 6, 4, 3, 2, 1], # 1960 (& 1961 constructors)
-     [9, 6, 4, 3, 2, 1], # 1961 - 1990 (& 1960 drivers)
-     [10, 6, 4, 3, 2, 1], # 1991 - 2002
-     [10, 8, 6, 5, 4, 3, 2, 1], # 2003 - 2009
-     [25, 18, 15, 12, 10, 8, 6, 4, 2, 1], # 2010 -
-]
-
 FASTEST_LAP_POINT = 1
 NON_SCORING_POS_POINTS = 0
 
@@ -42,7 +33,8 @@ class Race(MyDataClass):
         """
         Initializes empty class where all fields are set to None or empty lists.
         """
-        for data_field in RACE_DATA_FIELDS:
+        self.data_fields = RACE_DATA_FIELDS
+        for data_field in self.data_fields:
             setattr(self, data_field, None)
         self.entrants = {}
         self.sprint_entrants = None
@@ -59,9 +51,7 @@ class Race(MyDataClass):
         return f"{str(self.year)} {str(self.name)}"
     
     def read_data(self, data:list[str]):
-        assert len(data) == len(RACE_DATA_FIELDS), f"Unsupported number of fields! Must be {len(RACE_DATA_FIELDS)}, found {len(data)}!"
-        for i in range(len(data)):
-            setattr(self,RACE_DATA_FIELDS[i], data[i])
+        self.read_csv_data(data)
     
     def add_circuit(self, circuit:Circuit):
         """
@@ -88,9 +78,9 @@ class Race(MyDataClass):
         assert isinstance(driver, Driver), "Driver must be instance of class Driver!"
         assert len(results) == len(RACE_RESULT_DATA_FIELDS), f"Incorrect number of data fields! (Got {len(results)}, expected {len(RACE_RESULT_DATA_FIELDS)})"
         # results[0]
-        assert results[1] == self.raceId, "Incorrect race result!"
-        assert results[2] == driver.driverId, "Incorrect driver id!"
-        assert results[3] == constructor.constructorId, "Incorrect constructor id!"
+        assert int(results[1]) == self.raceId, "Incorrect race result!"
+        assert int(results[2]) == driver.driverId, "Incorrect driver id!"
+        assert int(results[3]) == constructor.constructorId, "Incorrect constructor id!"
         results_dict["constructor"] = constructor
         for i in range(4, len(RACE_RESULT_DATA_FIELDS)):
             results_dict[RACE_RESULT_DATA_FIELDS[i]] = results[i]
@@ -112,9 +102,9 @@ class Race(MyDataClass):
         assert isinstance(driver, Driver), "Driver must be instance of class Driver!"
         assert len(results) == len(SPRINT_RESULT_DATA_FIELDS), f"Incorrect number of data fields! (Got {len(results)}, expected {len(SPRINT_RESULT_DATA_FIELDS)})"
         # results[0]
-        assert results[1] == self.raceId, "Incorrect race result!"
-        assert results[2] == driver.driverId, "Incorrect driver id!"
-        assert results[3] == constructor.constructorId, "Incorrect constructor id!"
+        assert int(results[1]) == self.raceId, "Incorrect race result!"
+        assert int(results[2]) == driver.driverId, "Incorrect driver id!"
+        assert int(results[3]) == constructor.constructorId, "Incorrect constructor id!"
         results_dict["constructor"] = constructor
         for i in range(4, len(SPRINT_RESULT_DATA_FIELDS)):
             results_dict[SPRINT_RESULT_DATA_FIELDS[i]] = results[i]
@@ -199,48 +189,6 @@ class Race(MyDataClass):
             assert isinstance(self.fastest_driver, Driver), f"Fastest driver must be class Driver!"
         return self.fastest_driver
 
-    def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
-        """
-        Return which points system to use for each year
-        Parameters:
-            None
-        Outputs:
-            points_system: list[int]; Points awarded per position, i.e. P1 ->
-        """
-        year = int(self.year)
-        assert year >= 1950, "Invalid year"
-        if year >= 2010:
-            return POINTS_SYSTEMS[5]
-        elif year >= 2003:
-            return POINTS_SYSTEMS[4]
-        elif year >= 1991:
-            return POINTS_SYSTEMS[3]
-        elif year >= 1962:
-            return POINTS_SYSTEMS[2]
-        elif year >= 1960:
-            if year == 1961 and drivers_champ:
-                return POINTS_SYSTEMS[2]
-            return POINTS_SYSTEMS[1]
-        elif year >= 1950:
-            return POINTS_SYSTEMS[0]
-        else:
-            raise AssertionError("WTF???")
-
-    def select_sprint_points_system(self) -> list[int]:
-        """
-        Return which sprint points system to use for each year
-        Parameters:
-            None
-        Outputs:
-            points_system: list[int]; Points awarded per position, i.e. P1 ->
-        """
-        year = int(self.year)
-        assert year >= 2021, "Invalid year"
-        if year == 2021:
-            return [3, 2, 1]
-        elif year >= 2022:
-            return [8, 7, 6, 5, 4, 3, 2, 1]
-
     def score_for_pos(self, finish_pos:int, points_system:list[int]) -> int:
         """
         Retrieve number of points scored for position in event based on poins system
@@ -257,30 +205,17 @@ class Race(MyDataClass):
         else:
             return points_system[finish_pos-1]
 
-    def calculate_points(self, pointssystem=None, fastest_lap:int=None):
+    def calculate_points(self, pointssystem, fastest_lap:int):
         """
         Calculate and distribute points to drivers according to given pointssystem
         Parameters:
-            (Optional) pointssystem: int | list[int]; Choose which system to use (see global variable). Default = None => automatic
-            (Optional) fastest_lap: int; How many to give point for fastest lap. Default = None => automatic
+            pointssystem: list[int]; How to award points for each finishing position.
+            fastest_lap: int; How many to give point for fastest lap.
         Outputs:
             Gives each entrant driver and team their points
         """
-        if pointssystem == None:
-            points_arr_driver = self.select_race_points_system()
-            points_arr_constructor = self.select_race_points_system(drivers_champ=False)
-        elif isinstance(pointssystem, list) and len(pointssystem) > 0 and all([isinstance(x, int) for x in pointssystem]):
-            points_arr_driver = pointssystem
-        elif isinstance(pointssystem, int):
-            assert 0 <= pointssystem < len(POINTS_SYSTEMS), "Out of range"
-            points_arr_driver = POINTS_SYSTEMS[pointssystem]
-        else:
-            raise AssertionError("WTF???")
         
         assert len(self.entrants) > 0, f"Uninitialized entrants! Use method add_entrant()!"
         for entrant in self.entrants.keys():
             pos = int(self.entrants[entrant]["position"])
-            points_driver = self.score_for_pos(pos, points_arr_driver)
-            points_constructor = self.score_for_pos(pos, points_arr_constructor)
-        
-
+            points_driver = self.score_for_pos(pos, pointssystem)

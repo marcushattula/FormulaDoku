@@ -11,7 +11,8 @@ class Constructor(MyDataClass):
         """
         Initializes empty class where all fields are set to None or empty lists.
         """
-        for data_field in CONSTRUCTOR_DATA_FIELDS:
+        self.data_fields = CONSTRUCTOR_DATA_FIELDS
+        for data_field in self.data_fields:
             setattr(self, data_field, None)
         self.drivers = []
     
@@ -31,7 +32,5 @@ class Constructor(MyDataClass):
         Outputs:
             Adds data fields as attributes to this object.
         """
-        assert len(data) == len(CONSTRUCTOR_DATA_FIELDS), f"Unsupported number of fields! Must be {len(CONSTRUCTOR_DATA_FIELDS)}, found {len(data)}!"
-        for i in range(len(data)):
-            setattr(self,CONSTRUCTOR_DATA_FIELDS[i], data[i])
+        self.read_csv_data(data)
     

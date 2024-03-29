@@ -45,13 +45,13 @@ def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, fie
             matching_obj_list.append(obj)
     return matching_obj_list
 
-def find_single_object_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value:str, strict:bool=True) -> MyDataClass:
+def find_single_object_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> MyDataClass:
     """
     Find one object with a certain value in a given field
     Parameters:
         obj_list: list[MyDataClass]; list of objects to be searched through
         field_name: str; name of field to be searched in
-        field_value: str; value or string to be found in given field
+        field_value: Any; value or string to be found in given field
         (Optional) strict: bool; Be strict with capitalization or diacritics. Default = True
     Outputs:
         matching_obj: MyDataClass; object that meets the given criteria.

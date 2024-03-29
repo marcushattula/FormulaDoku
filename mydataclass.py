@@ -14,7 +14,22 @@ class MyDataClass():
     
     def __hash__(self):
         return hash(str(self))
-    
+
+    def read_csv_data(self, data:list[str]):
+        """
+        Read data directly from csv file. If numeric, make into integer
+        Parameters:
+            data: list[str]; Data from csv, matching row
+        Outputs:
+            Sets data from csv according to self.data_fields, defined in subclasses
+        """
+        assert len(data) == len(self.data_fields), f"Unsupported number of fields! Must be {len(self.data_fields)}, found {len(data)}!"
+        for i in range(len(data)):
+            temp = data[i]
+            if temp.isnumeric():
+                temp = int(temp)
+            setattr(self,self.data_fields[i], temp)
+
     def map_to_string(self, field1:str, field2:str=None) -> str:
         """
         Get any field of this object and map according to other fields

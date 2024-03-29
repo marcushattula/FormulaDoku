@@ -11,7 +11,8 @@ class Circuit(MyDataClass):
         """
         Initializes empty class where all fields are set to None or empty lists.
         """
-        for data_field in CIRCUIT_DATA_FIELDS:
+        self.data_fields = CIRCUIT_DATA_FIELDS
+        for data_field in self.data_fields:
             setattr(self, data_field, None)
     
     def __str__(self):
