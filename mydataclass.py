@@ -10,7 +10,14 @@ class MyDataClass():
         Initializes empty class where all fields are set to None or empty lists.
         """
         self.data_fields = []
-    
+
+    def __str__(self):
+        assert hasattr(self, "name"), "Missing name attribute!"
+        return self.name
+
+    def __repr__(self):
+        return f"{self.__class__.__name__}: {str(self)}"
+
     def __eq__(self, other_obj):
         return str(self) == str(other_obj)
     
