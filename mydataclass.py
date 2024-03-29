@@ -1,3 +1,5 @@
+from webbrowser import open
+
 class MyDataClass():
     """
     Parent class for inheritance by dataclasses.
@@ -114,3 +116,7 @@ class MyDataClass():
         """
         assert hasattr(self, field), f"Object {self.__class__.__name__} has no field {field}!"
         return getattr(self, field)
+
+    def wiki(self) -> None:
+        assert hasattr(self, "url") and self.url, "Obect missing url!"
+        open(self.url, new=0, autoraise=True)
