@@ -1,5 +1,5 @@
 from readArchive import ArchiveReader
-from mydataclass import MyDataClass
+from mydataclass import MyDataClass, find_single_object_by_field_value
 from driver import Driver
 from globals import *
 from question import Question, new_question

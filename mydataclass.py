@@ -1,4 +1,5 @@
 from webbrowser import open
+from globals import *
 
 class MyDataClass():
     """
@@ -32,22 +33,6 @@ class MyDataClass():
         Outputs:
             Sets data from csv according to self.data_fields, defined in subclasses
         """
-        # TODO: Move to globals.py to improve imports!
-        def isFloat(input_str:str) -> bool:
-            """
-            Check if input string is decimal number, i.e. can be turned into float
-            Parameters:
-                input_str: str; string to be tested
-            Outputs:
-                b: bool; True if input string can be converted to float, else False
-            """
-            try:
-                float(input_str)
-            except ValueError:
-                return False
-            else:
-                return True
-
         assert len(data) == len(self.data_fields), f"Unsupported number of fields! Must be {len(self.data_fields)}, found {len(data)}!"
         for i in range(len(data)):
             temp = data[i]
@@ -147,3 +132,37 @@ class MyDataClass():
     def wiki(self) -> None:
         assert hasattr(self, "url") and self.url, "Obect missing url!"
         open(self.url, new=0, autoraise=True)
+
+
+def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> list[MyDataClass]:
+    """
+    Find all objects with a certain value in a given field
+    Parameters:
+        obj_list: list[MyDataClass]; list of objects to be searched through
+        field_name: str; name of field to be searched in
+        field_value: int or str; value or string to be found in given field
+        (Optional) strict: bool; Be strict with capitalization or diacritics. Default = True
+    Outputs:
+        matching_obj_list: list[MyDataClass]; list of all objects that meet the given criteria.
+    """
+    matching_obj_list = []
+    for obj in obj_list:
+        obj_value = obj.get_field(field_name)
+        if  obj_value == field_value or (not strict and isinstance(obj_value, str) and remove_accents(obj_value).lower() == remove_accents(field_value).lower()):
+            matching_obj_list.append(obj)
+    return matching_obj_list
+
+def find_single_object_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> MyDataClass:
+    """
+    Find one object with a certain value in a given field
+    Parameters:
+        obj_list: list[MyDataClass]; list of objects to be searched through
+        field_name: str; name of field to be searched in
+        field_value: Any; value or string to be found in given field
+        (Optional) strict: bool; Be strict with capitalization or diacritics. Default = True
+    Outputs:
+        matching_obj: MyDataClass; object that meets the given criteria.
+    """
+    candidates = find_objects_by_field_value(obj_list, field_name, field_value, strict=strict)
+    assert len(candidates) == 1, f"Incorrect number of objects found with field '{field_name}' value '{field_value}'! (Found {len(candidates)})"
+    return candidates[0]

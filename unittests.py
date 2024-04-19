@@ -2,8 +2,8 @@ import unittest
 import random
 
 from readArchive import ArchiveReader
-from globals import ARCHIVE_FILE, remove_accents, find_objects_by_field_value, find_single_object_by_field_value
-from mydataclass import MyDataClass
+from globals import ARCHIVE_FILE, remove_accents, isFloat
+from mydataclass import MyDataClass, find_objects_by_field_value, find_single_object_by_field_value
 from circuit import Circuit
 from constructor import Constructor
 from driver import Driver
@@ -57,7 +57,8 @@ def compare_attributes(testcase:unittest.TestCase, dataclass_obj:MyDataClass, cs
                 expected_value = int(expected_value)
             elif expected_value == "\\N":
                 expected_value = None
-            # elif isFloat(expected_value): expected_value = float(expected_value) # TODO: move isFloat() to globals.py
+            elif isFloat(expected_value): 
+                expected_value = float(expected_value)
             testcase.assertTrue(attribute_value == expected_value, error_msg(dataclass_attribute, expected_value, attribute_value))
 
 class TestGlobals(unittest.TestCase):

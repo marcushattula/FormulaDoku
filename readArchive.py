@@ -1,5 +1,5 @@
 from globals import *
-from mydataclass import MyDataClass
+from mydataclass import find_single_object_by_field_value
 from driver import Driver
 from circuit import Circuit
 from constructor import Constructor
