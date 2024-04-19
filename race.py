@@ -219,3 +219,5 @@ class Race(MyDataClass):
         for entrant in self.entrants.keys():
             pos = int(self.entrants[entrant]["position"])
             points_driver = self.score_for_pos(pos, pointssystem)
+            # TODO: Finish implementing
+    

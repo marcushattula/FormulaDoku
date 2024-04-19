@@ -154,6 +154,7 @@ class QuizGame():
                     pass
                 elif (self.check_cell_pair_answer(answer_tuple[0], answer_tuple[1], obj)):
                     pass
+            # TODO: Finish
     
     def select_cell(self, cellname:str) -> tuple[int,int]:
         """

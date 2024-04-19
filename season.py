@@ -39,7 +39,7 @@ class Season(MyDataClass):
             self.year = int(self.year)
         assert isinstance(self.year, int), "Year must be integer!"
 
-    def add_race(self, race:Race):
+    def add_race(self, race:Race) -> None:
         """
         Add a race to this season
         Parameters:
@@ -49,7 +49,10 @@ class Season(MyDataClass):
         """
         assert isinstance(race, Race), "Race must be of type Race!"
         assert race not in self.races, "Race already added!"
-        self.races.append(race)
+        assert hasattr(race, "round") and isinstance(race.round, int) and race.round, "Race missing round"
+        while race.round > len(self.races):
+            self.races.append(None)
+        self.races[race.round-1] = race
 
     def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
         """

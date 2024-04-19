@@ -157,14 +157,14 @@ class Question():
         Outputs:
             filtered_list: list[MyDataClass]; filtered list of candidates that are correct answers
         """
-        if hasattr(self, "__all_answers"):
-            return self.__all_answers
+        if hasattr(self, "_all_answers"):
+            return self._all_answers
         else:
-            self.__all_answers = []
+            self._all_answers = []
             for candidate in candidates:
                 if self.check_question(candidate):
-                    self.__all_answers.append(candidate)
-            return self.get_all_answers()
+                    self._all_answers.append(candidate)
+            return self.get_all_answers(candidates)
     
     def get_mutual_answers(self, other_question, candidates:list[MyDataClass]) -> list[MyDataClass]:
         """
@@ -173,26 +173,26 @@ class Question():
             other_question: Question; the other question to be filtered for
             candidates: list[MyDataClass]; list of candidate answers
         Outputs:
-            Sets self.__mutual_answers[other_question] to list of valid answers
-            Sets other_question.__mutual_answers[self] to list of valid answers
+            Sets self._mutual_answers[other_question] to list of valid answers
+            Sets other_question._mutual_answers[self] to list of valid answers
             Returns list of valid answers
         """
-        if (hasattr(self, "__mutual_answers") and other_question in self.__mutual_answers):
-            other_question.__mutual_answers[self] = self.__mutual_answers[other_question]
-            return self.__mutual_answers[other_question]
-        elif (hasattr(other_question, "__mutual_answers") and self in other_question.__mutual_answers):
-            other_question.__mutual_answers[self] = self.__mutual_answers[other_question]
-            return other_question.__mutual_answers[self]
+        if (hasattr(self, "_mutual_answers") and other_question in self._mutual_answers):
+            other_question._mutual_answers[self] = self._mutual_answers[other_question]
+            return self._mutual_answers[other_question]
+        elif (hasattr(other_question, "_mutual_answers") and self in other_question._mutual_answers):
+            other_question._mutual_answers[self] = self._mutual_answers[other_question]
+            return other_question._mutual_answers[self]
         else:
-            self.__mutual_answers = {}
-            self.__mutual_answers[other_question] = []
-            other_question.__mutual_answers = {}
-            other_question.__mutual_answers[self] = []
+            self._mutual_answers = {}
+            self._mutual_answers[other_question] = []
+            other_question._mutual_answers = {}
+            other_question._mutual_answers[self] = []
             for candidate in candidates:
                 if self.check_question(candidate) and other_question.check_question(candidate):
-                    self.__mutual_answers[other_question].append(candidate)
-                    other_question.__mutual_answers[self].append(candidate)
-            return self.__mutual_answers[other_question]
+                    self._mutual_answers[other_question].append(candidate)
+                    other_question._mutual_answers[self].append(candidate)
+            return self._mutual_answers[other_question]
 
 class DriverAchievmentQuestion(Question):
     questions1 = [ # Easy questions
@@ -211,9 +211,9 @@ class DriverAchievmentQuestion(Question):
         ("Sprint wins", 1, numberSprintWins, "sprint_wins"),
     ]
 
-    def __init__(self, difficulty:int) -> None:
+    def __init__(self, difficulty:int, setseed:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty)
+        self.choose_question(difficulty, setseed=setseed)
 
 class DriverDataQuestion(Question):
     questions1 = [ # Easy questions
@@ -231,11 +231,12 @@ class DriverDataQuestion(Question):
     questions3 = [ # Hard questions
         ("Driver nationality", "Japanese", driverNationality, "nationality"),
         ("Driver nationality", "Canadian", driverNationality, "nationality"),
+        ("Driver nationality", "Finnish", driverNationality, "nationality"),
     ]
 
-    def __init__(self, difficulty:int) -> None:
+    def __init__(self, difficulty:int, setseed:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty)
+        self.choose_question(difficulty, setseed=setseed)
 
 class DriverTeamQuestion(Question):
     questions1 = [ # Easy questions
@@ -253,9 +254,9 @@ class DriverTeamQuestion(Question):
         ("Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
     ]
 
-    def __init__(self, difficulty:int) -> None:
+    def __init__(self, difficulty:int, setseed:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty)
+        self.choose_question(difficulty, setseed=setseed)
 
 def new_question(difficulty:int, questiontype:int) -> Question:
     """

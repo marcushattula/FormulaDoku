@@ -32,11 +32,31 @@ class MyDataClass():
         Outputs:
             Sets data from csv according to self.data_fields, defined in subclasses
         """
+        # TODO: Move to globals.py to improve imports!
+        def isFloat(input_str:str) -> bool:
+            """
+            Check if input string is decimal number, i.e. can be turned into float
+            Parameters:
+                input_str: str; string to be tested
+            Outputs:
+                b: bool; True if input string can be converted to float, else False
+            """
+            try:
+                float(input_str)
+            except ValueError:
+                return False
+            else:
+                return True
+
         assert len(data) == len(self.data_fields), f"Unsupported number of fields! Must be {len(self.data_fields)}, found {len(data)}!"
         for i in range(len(data)):
             temp = data[i]
             if temp.isnumeric():
                 temp = int(temp)
+            elif isFloat(temp):
+                temp = float(temp)
+            elif temp == "\\N":
+                temp = None
             setattr(self,self.data_fields[i], temp)
 
     def map_to_string(self, field1:str, field2:str=None) -> str:
@@ -121,7 +141,7 @@ class MyDataClass():
         Outputs:
             attr: Any; value stored in field, equivalent to self."field"
         """
-        assert hasattr(self, field), f"Object {self.__class__.__name__} has no field {field}!"
+        assert hasattr(self, field), f"Object {self.__class__.__name__} has no field '{field}'!"
         return getattr(self, field)
 
     def wiki(self) -> None:

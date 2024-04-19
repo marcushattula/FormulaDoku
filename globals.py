@@ -27,6 +27,7 @@ def remove_accents(input_str:str):
     only_ascii = nfkd_form.encode('ASCII', 'ignore')
     return str(only_ascii, 'utf-8')
 
+# TODO: Move to mydataclass.py to simplify imports!
 def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> list[MyDataClass]:
     """
     Find all objects with a certain value in a given field
@@ -45,6 +46,7 @@ def find_objects_by_field_value(obj_list: list[MyDataClass], field_name:str, fie
             matching_obj_list.append(obj)
     return matching_obj_list
 
+# TODO: Move to mydataclass.py to simplify imports!
 def find_single_object_by_field_value(obj_list: list[MyDataClass], field_name:str, field_value, strict:bool=True) -> MyDataClass:
     """
     Find one object with a certain value in a given field
@@ -57,5 +59,5 @@ def find_single_object_by_field_value(obj_list: list[MyDataClass], field_name:st
         matching_obj: MyDataClass; object that meets the given criteria.
     """
     candidates = find_objects_by_field_value(obj_list, field_name, field_value, strict=strict)
-    assert len(candidates) == 1, f"Incorrect number of objects found with field {field_name} value {field_value}! (Found {len(candidates)})"
+    assert len(candidates) == 1, f"Incorrect number of objects found with field '{field_name}' value '{field_value}'! (Found {len(candidates)})"
     return candidates[0]
