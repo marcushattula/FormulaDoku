@@ -26,6 +26,7 @@ class QuizGame():
         self.guesses = self.n_columns * self.n_rows # Number of guesses
         self.col_questions: list[Question] = [] # List of column questions
         self.row_questions: list[Question] = [] # List of row questions
+        self.possible_answers: list[MyDataClass] = [] # List of possible answers to this quiz
 
     def solved(self) -> bool:
         """
@@ -107,7 +108,7 @@ class QuizGame():
             Returns None
         """
         self.guesses = self.n_columns * self.n_rows
-        n  = 0
+        n = 0
         while n < self.n_columns:
             question = new_question(min([self.difficulty, n+1]), 1)
             if question not in self.col_questions:
@@ -123,9 +124,13 @@ class QuizGame():
                     if not question.validate_question(col_question, self.validation_list):
                         valid_question = False
                         break
-            if question not in self.row_questions:
+            if question not in self.row_questions and question not in self.col_questions:
                 self.row_questions.append(question)
                 n += 1
+        if not self.full_validation():
+            self.col_questions = []
+            self.row_questions = []
+            self.start_game()
 
     def full_validation(self) -> bool:
         """
@@ -135,26 +140,43 @@ class QuizGame():
         Outputs:
             all_unique: bool; True if every question can have at least one unique answer, else False
         """
-
-        def get_all_mutuals_list() -> dict:
+        def get_list_of_answers_list() -> list[list[MyDataClass]]:
+            """
+            Get answers for each quiz box as separate lists
+            Parameters:
+                None
+            Outputs:
+                answers: list[list[MyDataClass]]; list of list of answers to each question pair
+            """
             x = []
             for i in range(len(self.col_questions)):
                 col_question = self.col_questions[i]
                 for j in range(len(self.row_questions)):
                     row_question = self.row_questions[j]
                     valid_answers = col_question.get_mutual_answers(row_question, self.validation_list)
-                    x.append((i, j, valid_answers))
-            return sorted(x, key=lambda x: len(x[2]))
-
-        valid_answers_tuples = get_all_mutuals_list()
-        for answer_tuple in valid_answers_tuples:
-            used_answers = []
-            for obj in answer_tuple[2]:
-                if obj in used_answers: # Answer has already been used -> continue validation
-                    pass
-                elif (self.check_cell_pair_answer(answer_tuple[0], answer_tuple[1], obj)):
-                    pass
-            # TODO: Finish
+                    x.append(valid_answers)
+            return x
+       
+        def constraints_search(ans_list: list[list[MyDataClass]], used_answers=[]) -> bool:
+            """
+            
+            """
+            if len(ans_list) == 0:
+                self.possible_answers = used_answers
+                return True
+            for answer in ans_list[0]:
+                if answer not in used_answers:
+                    temp_arr = used_answers.copy()
+                    temp_arr.append(answer)
+                    if constraints_search(ans_list[1:], used_answers=temp_arr):
+                        return True
+            print("\nUnable to validate quiz:")
+            self.print_questions()
+            return False
+        
+        all_answers = get_list_of_answers_list()
+        sorted_answers = sorted(all_answers, key=len)
+        return constraints_search(sorted_answers)
     
     def select_cell(self, cellname:str) -> tuple[int,int]:
         """
@@ -347,12 +369,13 @@ class DriverQuiz(QuizGame):
                 raise AssertionError("Invalid input_type value")
             input_string += "Type 'cancel' to cancel or 'quit' to exit program.\n"
             inp = input(input_string).strip().lower()
-            if inp.lower() == "cancel":
-                return None
-            elif inp.lower() == "quit" or inp.lower() == 'q':
+            
+            if inp.lower() == "quit" or inp.lower() == 'q' or inp.lower() == "exit" or inp.lower() == "e":
                 exit()
-            elif inp.lower() == "give up" or inp.lower() == "forfeit":
+            elif inp.lower() == "give up" or inp.lower() == "forfeit" or inp.lower() == "f":
                 self.forfeit = True
+                return None
+            elif len(inp) < 2 or inp.lower() == "cancel" or inp.lower() == "c":
                 return None
             elif input_type == 1: # User should input grid coordinates
                 if len(inp) == 2 and inp[0].upper() in self.colnames and inp[1] in self.rownames:
@@ -420,7 +443,7 @@ class RaceQuiz(QuizGame):
         pass
 
 
-def play_driver_game(cols:int=3, rows:int=3, difficulty:int=1, guesses:int=9):
+def play_driver_game(cols:int=3, rows:int=3, difficulty:int=3, guesses:int=9):
     """
     Play driver quiz. This method is used for debugging.
     """
