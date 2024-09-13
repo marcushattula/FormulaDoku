@@ -10,6 +10,7 @@ from driver import Driver
 from race import Race
 from season import Season
 from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion
+from quizgame import QuizGame, DriverQuiz
 
 TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
 
@@ -63,8 +64,21 @@ def compare_attributes(testcase:unittest.TestCase, dataclass_obj:MyDataClass, cs
 
 class TestGlobals(unittest.TestCase):
     """
-    Testclass includes tests for functions and methods defined in globals.py
+    Testclass includes tests for functions and methods defined in globals.py and some auxiliary functions
     """
+
+    def test_isFloat(self):
+        """
+        Tests isFloat() method.
+        """
+        string1 = "abcd" # Should fail
+        self.assertFalse(isFloat(string1))
+        string2 = "1024" # Should succeed
+        self.assertTrue(isFloat(string2))
+        string3 = "0.1A" # Should fail
+        self.assertFalse(isFloat(string3))
+        string4 = "54.321" # Should succeed
+        self.assertTrue(isFloat(string4))
 
     def test_RemoveAccents(self):
         """
@@ -205,15 +219,92 @@ class TestQuestions(unittest.TestCase):
         for driver in answers:
             self.assertTrue(driver.nationality == "German", f"Incorrect nationality! Expected German, got {driver.nationality}!")
 
+    def test_GetMutualAnswers(self):
+        question1 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
+        question2 = DriverAchievmentQuestion(1, setseed=123) # Race wins: 5
+        mutual_answers = question1.get_mutual_answers(question2, TESTARCHIVE.drivers) # Valtteri, Kimi, Mika, Keke
+        self.assertTrue(len(mutual_answers) == 4, error_msg("number of mutual answers", 4, len(mutual_answers)))
+
 
 class TestQuizClass(unittest.TestCase):
     """
     Testclass includes tests for Quiz class
     """
 
-    def test_QuizClass(self):
-        # TODO: Implement
-        self.assertTrue(False)
+    def test_QuizInit(self):
+        testquiz = QuizGame(TESTARCHIVE)
+        self.assertTrue(testquiz.n_columns == 3, error_msg("n_columns", 3, testquiz.n_columns))
+        self.assertTrue(testquiz.n_rows == 3, error_msg("n_rows", 3, testquiz.n_rows))
+        self.assertTrue(testquiz.guesses == 9, error_msg("guesses", 9, testquiz.guesses))
+        self.assertTrue(testquiz.difficulty == 1, error_msg("difficulty", 1, testquiz.difficulty))
+    
+    def test_DriverEasyQuiz(self):
+        driverquiz = DriverQuiz(TESTARCHIVE, setseed=1)
+        driverquiz.start_game()
+        col_questions = ["Driver nationality: British", "Driver nationality: Italian", "Pole positions: 5"]
+        row_questions = ["Driven for team: Williams", "Driven for team: Ferrari", "Race wins: 5"]
+        self.assertTrue(len(driverquiz.col_questions) == len(col_questions), f"Mismatching number of col questions")
+        self.assertTrue(len(driverquiz.row_questions) == len(row_questions), f"Mismatching number of row questions")
+        for i in range(len(col_questions)):
+            i_ref = col_questions[i]
+            i_quiz = driverquiz.col_questions[i]
+            self.assertTrue(str(i_quiz) == i_ref, f"Mismatching column question {i}")
+        for i in range(len(row_questions)):
+            i_ref = row_questions[i]
+            i_quiz = driverquiz.row_questions[i]
+            self.assertTrue(str(i_quiz) == i_ref, f"Mismatching row question {i}")
+    
+    def test_DriverQuizFalseValidation(self):
+        driverQuiz = DriverQuiz(TESTARCHIVE)
+        driverQuiz.set_n_columns(2)
+        driverQuiz.set_n_rows(1)
+        question1 = DriverDataQuestion(1, setseed=123) # Driver nationality: German
+        question2 = DriverTeamQuestion(2, setseed=7) # Driven for team: Red Bull
+        question3 = DriverTeamQuestion(3, setseed=5) # Driven for team: Toro Rosso
+        driverQuiz.set_row_question(question1)
+        driverQuiz.set_col_question(question2)
+        driverQuiz.set_col_question(question3)
+        # This quiz is unsolveable, since only Vettel is a valid answer for both cells
+        self.assertFalse(driverQuiz.full_validation())
+    
+    def test_DriverQuizTrueValidation(self):
+        driverQuiz = DriverQuiz(TESTARCHIVE)
+        driverQuiz.set_n_columns(2)
+        driverQuiz.set_n_rows(2)
+        question1 = DriverDataQuestion(1, setseed=123) # Driver nationality: German
+        question2 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
+        question3 = DriverAchievmentQuestion(1, setseed=1) # World championships: 1
+        question4 = DriverTeamQuestion(1, setseed=5) # Driven for team: Ferrari
+        driverQuiz.set_row_question(question1)
+        driverQuiz.set_row_question(question2)
+        driverQuiz.set_col_question(question3)
+        driverQuiz.set_col_question(question4)
+        self.assertTrue(driverQuiz.full_validation())
+        valid_answers = {
+            (0, 0): TESTARCHIVE.drivers[2],
+            (0, 1): TESTARCHIVE.drivers[7],
+            (1, 0): TESTARCHIVE.drivers[19],
+            (1, 1): TESTARCHIVE.drivers[62]
+        }
+        self.assertTrue(driverQuiz.possible_answers == valid_answers)
+
+    def test_DriverQuizLongValidation(self):
+        driveruiz = DriverQuiz(TESTARCHIVE)
+        driverQuiz = DriverQuiz(TESTARCHIVE)
+        driverQuiz.set_n_columns(3)
+        driverQuiz.set_n_rows(3)
+        question1 = DriverDataQuestion(1, setseed=1234) # Driver nationality: French
+        question2 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
+        question3 = DriverDataQuestion(2, setseed=9) # Driver nationality: Australian
+        question4 = DriverAchievmentQuestion(1, setseed=1) # World championships: 1
+        driverQuiz.set_row_question(question1)
+        driverQuiz.set_row_question(question2)
+        driverQuiz.set_row_question(question3)
+        driverQuiz.set_col_question(question4)
+        driverQuiz.set_col_question(question4)
+        driverQuiz.set_col_question(question4)
+        # This quiz is unsolveable, since there are only two Australian champions
+        self.assertFalse(driverQuiz.full_validation())
 
 
 if __name__ == '__main__':

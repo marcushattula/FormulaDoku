@@ -76,6 +76,8 @@ def numberSeasonWins(n:int, answer:MyDataClass) -> bool:
             return True
     return False
 
+def hasTeammate(teammatename:str, answer:MyDataClass) -> bool:
+    return any(teammate.fullname == teammatename for teammate in answer.teammates)
 
 class Question():
     """
@@ -181,7 +183,7 @@ class Question():
             other_question._mutual_answers[self] = self._mutual_answers[other_question]
             return self._mutual_answers[other_question]
         elif (hasattr(other_question, "_mutual_answers") and self in other_question._mutual_answers):
-            other_question._mutual_answers[self] = self._mutual_answers[other_question]
+            self._mutual_answers[other_question] = other_question._mutual_answers[self]
             return other_question._mutual_answers[self]
         else:
             self._mutual_answers = {}
@@ -258,7 +260,18 @@ class DriverTeamQuestion(Question):
         super().__init__()
         self.choose_question(difficulty, setseed=setseed)
 
-def new_question(difficulty:int, questiontype:int) -> Question:
+class DriverSpecialQuestion(Question):
+    questions1 = [
+        ("Has had teammate", "Michael Schumacher", hasTeammate, "teammates")
+    ]
+    questions2 = []
+    questions3 = []
+
+    def __init__(self, difficulty, setseed:int=None) -> None:
+        super().__init__()
+        self.choose_question(difficulty, setseed=setseed)
+
+def new_question(difficulty:int, questiontype:int, setseed=None) -> Question:
     """
     Create a new question
     Parameters:
@@ -273,9 +286,9 @@ def new_question(difficulty:int, questiontype:int) -> Question:
     assert isinstance(questiontype, int) and 1 <= questiontype <= 2, "Questiontype must be integer 1-2"
     achievment = random.randint(1,2)
     if achievment == 2:
-        return DriverAchievmentQuestion(difficulty)
+        return DriverAchievmentQuestion(difficulty, setseed=setseed)
     elif questiontype == 1:
-        return DriverDataQuestion(difficulty)
+        return DriverDataQuestion(difficulty, setseed=setseed)
     elif questiontype == 2:
-        return DriverTeamQuestion(difficulty)
+        return DriverTeamQuestion(difficulty, setseed=setseed)
 

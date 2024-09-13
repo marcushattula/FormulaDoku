@@ -1,3 +1,5 @@
+import random
+
 from readArchive import ArchiveReader
 from mydataclass import MyDataClass, find_single_object_by_field_value
 from driver import Driver
@@ -11,7 +13,7 @@ class QuizGame():
     colnames = ['A','B','C','D','E'] # Columns are labeled letters A-E
     rownames = ['1','2','3','4','5'] # Rows are labeled numbers 1-5
 
-    def __init__(self, archive:ArchiveReader):
+    def __init__(self, archive:ArchiveReader, setseed=None):
         """
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
@@ -26,7 +28,8 @@ class QuizGame():
         self.guesses = self.n_columns * self.n_rows # Number of guesses
         self.col_questions: list[Question] = [] # List of column questions
         self.row_questions: list[Question] = [] # List of row questions
-        self.possible_answers: list[MyDataClass] = [] # List of possible answers to this quiz
+        self.possible_answers = {} # List of possible answers to this quiz
+        self.seed = setseed # Seed for generating "random" quiz questions
 
     def solved(self) -> bool:
         """
@@ -98,6 +101,30 @@ class QuizGame():
         assert isinstance(guesses, int) and guesses > 0, "Number of guesses must be positive integer."
         self.guesses = guesses
 
+    def set_col_question(self, question:Question) -> None:
+        """
+        Add a question to col questions
+        Parameters:
+            question: Question; question to be added
+        Outputs:
+            None
+            Adds the question to self.col_questions
+        """
+        assert isinstance(question, Question), f"Added question must be Question object"
+        self.col_questions.append(question)
+
+    def set_row_question(self, question:Question) -> None:
+        """
+        Add a question to row questions
+        Parameters:
+            question: Question; question to be added
+        Outputs:
+            None
+            Adds the question to self.row_questions
+        """
+        assert isinstance(question, Question), f"Added question must be Question object"
+        self.row_questions.append(question)
+
     def start_game(self) -> None:
         """
         Starts the game with set settings. Generates questions.
@@ -108,25 +135,25 @@ class QuizGame():
             Returns None
         """
         self.guesses = self.n_columns * self.n_rows
-        n = 0
-        while n < self.n_columns:
-            question = new_question(min([self.difficulty, n+1]), 1)
+        while len(self.col_questions) < self.n_columns:
+            n = len(self.col_questions)
+            question = new_question(min([self.difficulty, n+1]), 1, setseed=self.seed)
+            self.seed = random.random()
             if question not in self.col_questions:
-                self.col_questions.append(question)
-                n += 1
-        n = 0
-        while n < self.n_rows:
+                self.set_col_question(question)
+        while len(self.row_questions) < self.n_rows:
+            n = len(self.col_questions)
             valid_question = False
             while not valid_question:
-                question = new_question(min([self.difficulty, n+1]), 2)
+                question = new_question(min([self.difficulty, n+1]), 2, setseed=self.seed)
+                self.seed = random.random()
                 valid_question = True
                 for col_question in self.col_questions:
                     if not question.validate_question(col_question, self.validation_list):
                         valid_question = False
                         break
             if question not in self.row_questions and question not in self.col_questions:
-                self.row_questions.append(question)
-                n += 1
+                self.set_row_question(question)
         if not self.full_validation():
             self.col_questions = []
             self.row_questions = []
@@ -157,12 +184,32 @@ class QuizGame():
                     x.append(valid_answers)
             return x
        
+        def set_possible_answers(possible_answers: list[MyDataClass]) -> None:
+            """
+            Takes list of correct answers and stores it to dictionary for each question
+            Parameters:
+                possible_answers: list[MyDataClass]; validated llist of answers
+            Outputs:
+                None
+                Stores the dictionary to self.possible_answers
+            """
+            for i in range(self.n_columns):
+                for j in range(self.n_rows):
+                    index = i*self.n_rows+j
+                    if index < len(possible_answers):
+                        self.possible_answers[(i, j)] = possible_answers[index]
+
         def constraints_search(ans_list: list[list[MyDataClass]], used_answers=[]) -> bool:
             """
-            
+            Recursively check that there is a unused answer for each question
+            Parameters:
+                ans_list: list[list[MyDataClass]]; list of list of answers to each question
+            Outputs:
+                b: bool; True if each question has a unique answer, else False
+                Stores a found solution to self.possible_answers, if found
             """
             if len(ans_list) == 0:
-                self.possible_answers = used_answers
+                set_possible_answers(used_answers)
                 return True
             for answer in ans_list[0]:
                 if answer not in used_answers:
@@ -170,12 +217,10 @@ class QuizGame():
                     temp_arr.append(answer)
                     if constraints_search(ans_list[1:], used_answers=temp_arr):
                         return True
-            print("\nUnable to validate quiz:")
-            self.print_questions()
             return False
         
         all_answers = get_list_of_answers_list()
-        sorted_answers = sorted(all_answers, key=len)
+        sorted_answers = all_answers#sorted(all_answers, key=len)
         return constraints_search(sorted_answers)
     
     def select_cell(self, cellname:str) -> tuple[int,int]:
@@ -283,7 +328,7 @@ class QuizGame():
                 raise Exception("Error in receiving answer.")
             assert isinstance(user_guess, MyDataClass), "Invalid guess class type!"
             if user_guess in self.given_answers.values():
-                print(f"{str(user_guess)} has already been given as an answer! Try again!")
+                print(f"{str(user_guess)} has already been used as an answer! Try again!")
             elif self.answer_question(selected_col, selected_row, user_guess):
                 print("Correct!\n")
                 break
@@ -346,8 +391,8 @@ class DriverQuiz(QuizGame):
     Quizgame where the player must answer different drivers.
     """
 
-    def __init__(self, archive:ArchiveReader):
-        super().__init__(archive) # Init parent class
+    def __init__(self, archive:ArchiveReader, setseed=None):
+        super().__init__(archive, setseed=setseed) # Init parent class
         self.validation_list = self.archive.drivers # Use drivers when validating answers.
 
     def get_user_input(self, input_type:int):
