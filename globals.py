@@ -9,7 +9,7 @@ HOMEDIR = os.path.dirname(GLOBALSFILE) # Path to home directory, that is the par
 TEMP_DIRNAME = "temps" # Name of folder where to output extracted data from archive
 TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive directory path
 
-ARCHIVE_FILE = os.path.join(HOMEDIR, "archive.zip") # Path to archive file
+ARCHIVE_FILE = os.path.join(HOMEDIR, "archive2.zip") # Path to archive file
 DEFAULT_PICTURE = os.path.join(HOMEDIR, "default.jpg")
 
 def remove_accents(input_str:str):
