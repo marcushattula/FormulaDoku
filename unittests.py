@@ -9,7 +9,7 @@ from constructor import Constructor
 from driver import Driver
 from race import Race
 from season import Season
-from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion
+from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question
 from quizgame import QuizGame, DriverQuiz
 
 TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
@@ -209,19 +209,19 @@ class TestQuestions(unittest.TestCase):
     """
 
     def test_QuestionClass(self):
-        question1 = DriverAchievmentQuestion(1, setseed=1) # World championships: 1
+        question1 = new_question(1, questiontype=1, questionID=1) # World championships: 1
         self.assertTrue(str(question1) == 'World championships: 1')
     
     def test_GetAnswers(self):
-        question1 = DriverDataQuestion(1, setseed=123) # Driver nationality: German
+        question1 = new_question(1, 2, questionID=0) # Driver nationality: German
         answers = question1.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(answers) == 50, f"Incorrect number of answers! Expected 50, got {len(answers)}!")
         for driver in answers:
             self.assertTrue(driver.nationality == "German", f"Incorrect nationality! Expected German, got {driver.nationality}!")
 
     def test_GetMutualAnswers(self):
-        question1 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
-        question2 = DriverAchievmentQuestion(1, setseed=123) # Race wins: 5
+        question1 = new_question(1, 2, questionID=202) # Drier nationality: Finnish
+        question2 = new_question(1, 1, questionID=0) # Race wins: 5
         mutual_answers = question1.get_mutual_answers(question2, TESTARCHIVE.drivers) # Valtteri, Kimi, Mika, Keke
         self.assertTrue(len(mutual_answers) == 4, error_msg("number of mutual answers", 4, len(mutual_answers)))
 
@@ -241,8 +241,8 @@ class TestQuizClass(unittest.TestCase):
     def test_DriverEasyQuiz(self):
         driverquiz = DriverQuiz(TESTARCHIVE, setseed=1)
         driverquiz.start_game()
-        col_questions = ["Driver nationality: British", "Driver nationality: Italian", "Pole positions: 5"]
-        row_questions = ["Driven for team: Williams", "Driven for team: Ferrari", "Race wins: 5"]
+        col_questions = ["World championships: 1", "Race wins: 5", "Race entries: 20"]
+        row_questions = ["Driver nationality: French", "Driver nationality: British", "Driver nationality: German"]
         self.assertTrue(len(driverquiz.col_questions) == len(col_questions), f"Mismatching number of col questions")
         self.assertTrue(len(driverquiz.row_questions) == len(row_questions), f"Mismatching number of row questions")
         for i in range(len(col_questions)):
@@ -258,9 +258,9 @@ class TestQuizClass(unittest.TestCase):
         driverQuiz = DriverQuiz(TESTARCHIVE)
         driverQuiz.set_n_columns(2)
         driverQuiz.set_n_rows(1)
-        question1 = DriverDataQuestion(1, setseed=123) # Driver nationality: German
-        question2 = DriverTeamQuestion(2, setseed=7) # Driven for team: Red Bull
-        question3 = DriverTeamQuestion(3, setseed=5) # Driven for team: Toro Rosso
+        question1 = new_question(1, 2, questionID=0) # Driver nationality: German
+        question2 = new_question(2, 3, questionID=101) # Driven for team: Red Bull
+        question3 = new_question(3, 3, questionID=201) # Driven for team: Toro Rosso
         driverQuiz.set_row_question(question1)
         driverQuiz.set_col_question(question2)
         driverQuiz.set_col_question(question3)
@@ -289,7 +289,6 @@ class TestQuizClass(unittest.TestCase):
         self.assertTrue(driverQuiz.possible_answers == valid_answers)
 
     def test_DriverQuizLongValidation(self):
-        driveruiz = DriverQuiz(TESTARCHIVE)
         driverQuiz = DriverQuiz(TESTARCHIVE)
         driverQuiz.set_n_columns(3)
         driverQuiz.set_n_rows(3)

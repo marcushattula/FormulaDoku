@@ -205,7 +205,7 @@ class Race(MyDataClass):
         else:
             return points_system[finish_pos-1]
 
-    def calculate_points(self, pointssystem, fastest_lap:int):
+    def calculate_driver_points(self, pointssystem, fastest_lap:int) -> dict:
         """
         Calculate and distribute points to drivers according to given pointssystem
         Parameters:
@@ -214,10 +214,18 @@ class Race(MyDataClass):
         Outputs:
             Gives each entrant driver and team their points
         """
-        
         assert len(self.entrants) > 0, f"Uninitialized entrants! Use method add_entrant()!"
+        driver_points = {}
         for entrant in self.entrants.keys():
             pos = int(self.entrants[entrant]["position"])
             points_driver = self.score_for_pos(pos, pointssystem)
-            # TODO: Finish implementing
+            if entrant == self.get_fastest_lap():
+                points_driver += fastest_lap
+            driver_points[entrant] = points_driver
+        return driver_points
     
+    def calculate_constructor_points(self, pointssystem, fastest_lap:int) -> dict:
+        """
+        Calculate and distribute points to constructors according to given points system
+        """
+        return {}

@@ -292,8 +292,8 @@ class AnswerBox(QMainWindow):
         return scroll
 
     def top_row(self, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
-        field1 = question1.question[3]
-        field2 = question2.question[3]
+        field1 = question1.question[4]
+        field2 = question2.question[4]
 
         label1 = QLabel("Valid answer")
         label2 = QLabel(field1.capitalize())
@@ -304,10 +304,10 @@ class AnswerBox(QMainWindow):
         layout.addWidget(label3, layout_row, 2)
 
     def obj_line(self, object:MyDataClass, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
-        field1 = question1.question[3]
-        field2 = None if len(question1.question) < 5 else question1.question[4]
-        field4 = question2.question[3]
-        field5 = None if len(question2.question) < 5 else question2.question[4]
+        field1 = question1.question[4]
+        field2 = None if len(question1.question) < 6 else question1.question[5]
+        field4 = question2.question[4]
+        field5 = None if len(question2.question) < 6 else question2.question[5]
         
         label1 = QLabel(str(object))
         label2 = QLabel(str(object.map_to_string(field1, field2=field2)))

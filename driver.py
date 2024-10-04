@@ -20,6 +20,7 @@ class Driver(MyDataClass):
         self.teams = []
         self.teammates = []
         self.season_data = {}
+        self.race_entries = {}
     
     def __str__(self):
         """
@@ -40,7 +41,7 @@ class Driver(MyDataClass):
         """
         assert isinstance(value, float) or isinstance(value, int), f"Value must be int or float, currently {type(value)}!"
         if not year in self.season_data:
-            self.season_data[year] = {"wins":0,"podiums":0,"points":0,"poles":0,"entries":0,"sprint_wins":0}
+            self.season_data[year] = {"wins":0,"podiums":0,"points":0,"poles":0,"entries":0,"sprint_wins":0,"teammates":[]}
         assert field in self.season_data[year], f"Unknown field {field}!"
         self.season_data[year][field] += value
 
@@ -55,3 +56,19 @@ class Driver(MyDataClass):
         assert isinstance(teammate, Driver), "Teammate must be of class Driver!"
         if teammate not in self.teammates:
             self.teammates.append(teammate)
+
+    def add_race_to_data(self, race):#: Race):
+        """
+        Add all relevant data from a race to this driver's data
+        Parameters:
+            race: Race; Race class to read data from
+        Outputs:
+            Adds data to self
+        """
+        #assert isinstance(race, Race), "Input race must be of race type!"
+        year = race.year
+        if year in self.race_entries.keys():
+            self.race_entries[year].append(race)
+        else:
+            self.race_entries[year] = [race]
+        

@@ -23,6 +23,9 @@ class Season(MyDataClass):
         self.data_fields = SEASON_DATA_FIELDS
         self.races: list[Race] = []
         self.season_data = {} # driver: season_data
+        self.driver_standings = {}
+        self.constuctor_standings = {}
+        self.champion = None
     
     def __str__(self):
         """
@@ -109,16 +112,34 @@ class Season(MyDataClass):
         assert len(self.races) > 0, "Season not initialized!"
         assert all([isinstance(race, Race) for race in self.races]), "Wrong formatting in races list!"
         
+        # Get points system
         if pointssystem == None:
             points_arr_driver = self.select_race_points_system()
             points_arr_constructor = self.select_race_points_system(drivers_champ=False)
         elif isinstance(pointssystem, list) and len(pointssystem) > 0 and all([isinstance(x, int) for x in pointssystem]):
             points_arr_driver = pointssystem
+            points_arr_constructor = pointssystem
         elif isinstance(pointssystem, int):
             assert 0 <= pointssystem < len(POINTS_SYSTEMS), "Out of range"
             points_arr_driver = POINTS_SYSTEMS[pointssystem]
+            points_arr_constructor = POINTS_SYSTEMS[pointssystem]
         else:
             raise AssertionError("WTF???")
         
-        for race in self.races:
-            race.calculate_points(pointssystem=pointssystem, fastest_lap=fastest_lap_points)
+        # Update standings accoring to results of each race
+        for race in sorted(self.races, key=lambda r: r.round):
+            driver_points = race.calculate_driver_points(points_arr_driver, fastest_lap_points)
+            constructor_points = race.calculate_constructor_points(points_arr_constructor, fastest_lap_points)
+            for entrant in driver_points.keys():
+                if entrant in self.driver_standings.keys():
+                    self.driver_standings[entrant] += driver_points[entrant]
+                else:
+                    self.driver_standings[entrant] = driver_points[entrant]
+            for constructor in constructor_points:
+                if constructor in self.constuctor_standings:
+                    self.constuctor_standings[constructor] += constructor_points[constructor]
+                else:
+                    self.constuctor_standings[constructor] = constructor_points[constructor]
+
+        # Award championships
+        self.champion = max(self.driver_standings, key=lambda driver: self.driver_standings[driver])

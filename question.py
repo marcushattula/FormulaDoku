@@ -1,5 +1,6 @@
 import random
 from mydataclass import MyDataClass
+from globals import remove_accents
 
 def numberWins(n:int, answer:MyDataClass) -> bool:
     """
@@ -76,8 +77,24 @@ def numberSeasonWins(n:int, answer:MyDataClass) -> bool:
             return True
     return False
 
+def noChampionships(n:int, answer:MyDataClass) -> bool:
+    return answer.championships == 0
+
+def noWins(n:int, answer:MyDataClass) -> bool:
+    return answer.wins == 0
+
+def noPoles(n:int, answer:MyDataClass) -> bool:
+    return answer.poles == 0
+
+def noSeasonPoints(n:int, answer:MyDataClass) -> bool:
+    return any(answer.season_data[year]["points"] == 0 for year in answer.season_data.keys()) 
+
 def hasTeammate(teammatename:str, answer:MyDataClass) -> bool:
-    return any(teammate.fullname == teammatename for teammate in answer.teammates)
+    return any(remove_accents(teammate.fullname) == remove_accents(teammatename) 
+               for teammate in answer.teammates)
+
+def wildcard(_, answer:MyDataClass) -> bool:
+    return True
 
 class Question():
     """
@@ -90,23 +107,48 @@ class Question():
 
     def __init__(self):
         """
-        Parent init does nothing.
+        Parent init initializes later variables as None
         """
-        pass
+        self.question_id:int = None
+        self.base:str = None
+        self.modifier = None
+        self.func = None
+        self.map_field1 = None
+        self.map_field2 = None
     
     def __str__(self) -> str:
         """
         Overwrite string method to return string consisting of question base and limit/target
         """
-        return self.question[0] + ": " + str(self.question[1])
+        if self.modifier:
+            return self.base + ": " + str(self.modifier)
+        else:
+            return self.base
 
     def __hash__(self):
         return hash(str(self))
     
     def __eq__(self, other_question):
         return str(self) == str(other_question)
+    
+    def choose_question(self, difficulty:int, setseed=None, questionID:int=None):
+        """
+        Set a question. May be predetermined, random or pseudorandom
+        Parameters:
+            difficulty: int; difficulty of the question to generate
+            (Optional) setseed: Any; seed to use when randomizing questions. Default = None = Random
+            (Optional) questionID: int; ID of predetermined question. Default = None
+        """
+        if isinstance(questionID, int):
+            self.question = self.get_question(questionID)
+        else:
+            self.question = self.random_question(difficulty, setseed=setseed)
+        self.question_id = self.question[0]
+        self.base = self.question[1]
+        self.modifier = self.question[2]
+        self.func = self.question[3]
 
-    def choose_question(self, difficulty:int, setseed=None):
+    def random_question(self, difficulty:int, setseed=None):
         """
         Choose a question depending on difficulty. One question cannot be selected multiple times.
         Parameters:
@@ -116,12 +158,32 @@ class Question():
         if setseed and isinstance(setseed, int) or setseed == None:
             random.seed(setseed)
         if difficulty == 1:
-            self.question = random.choice(self.questions1)
+            return random.choice(self.questions1)
         elif difficulty == 2:
-            self.question = random.choice(self.questions2)
+            return random.choice(self.questions2)
         elif difficulty == 3:
-            self.question = random.choice(self.questions3)
-        
+            return random.choice(self.questions3)
+    
+    def get_question(self, question_id:int):
+        """
+        Set predetermined question based on question id
+        Parameters:
+            question_id: int; ID of the question
+        Outputs:
+            question: tuple; tuple containing question details
+        """
+        assert isinstance(question_id, int), "Question ID must be integer!"
+        for question in self.questions1:
+            if question[0] == question_id:
+                return question
+        for question in self.questions2:
+            if question[0] == question_id:
+                return question
+        for question in self.questions3:
+            if question[0] == question_id:
+                return question
+        raise AssertionError(f"No question with ID {question_id} was found!")
+
     def check_question(self, answer:MyDataClass) -> bool:
         """
         Check if question was answered correctly
@@ -133,7 +195,7 @@ class Question():
         if hasattr(self, "__all_answers"):
             return answer in self.__all_answers
         else:
-            return self.question[2](self.question[1], answer)
+            return self.func(self.modifier, answer)
 
     def validate_question(self, otherQuestion, candidates:list[MyDataClass]) -> bool:
         """
@@ -198,97 +260,110 @@ class Question():
 
 class DriverAchievmentQuestion(Question):
     questions1 = [ # Easy questions
-        ("Race wins", 5, numberWins, "wins"),
-        ("World championships", 1, numberChampionships, "championships"),
-        ("Race entries", 20, numberEntries, "entries"),
-        ("Pole positions", 5, numberPoles, "poles"),
+        (0, "Race wins", 5, numberWins, "wins"),
+        (1, "World championships", 1, numberChampionships, "championships"),
+        (2, "No world championships", "", noChampionships, "championships"),
+        (3, "Race entries", 20, numberEntries, "entries"),
+        (4, "Pole positions", 5, numberPoles, "poles"),
         ]
     questions2 = [ # Medium questions
-        ("Number of podiums in a season", 6, numberSeasonPodiums, "season_data", "wins"),
-        ("Number of points during career", 300, numberPoints, "points"),
-        ("Number of wins in a season", 3, numberSeasonWins, "season_data", "wins"),
-        ("Podiums", 10, numberPodiums, "season_data", "podiums"),
+        (100, "Number of podiums in a season", 6, numberSeasonPodiums, "season_data", "wins"),
+        (101, "Number of points during career", 300, numberPoints, "career_points"),
+        (102, "Number of wins in a season", 3, numberSeasonWins, "season_data", "wins"),
+        (103, "Podiums", 10, numberPodiums, "season_data", "podiums"),
+        (104, "No wins", "", noWins)
     ]
     questions3 = [ # Hard questions
-        ("Sprint wins", 1, numberSprintWins, "sprint_wins"),
+        (201, "Sprint wins", 1, numberSprintWins, "sprint_wins"),
+        (201, "No points during any season", "", noSeasonPoints, "season_data", "points"),
+        (202, "No pole positions", "", noPoles, "season_data", "poles")
     ]
 
-    def __init__(self, difficulty:int, setseed:int=None) -> None:
+    def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty, setseed=setseed)
+        self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
 class DriverDataQuestion(Question):
     questions1 = [ # Easy questions
-        ("Driver nationality", "German", driverNationality, "nationality"),
-        ("Driver nationality", "British", driverNationality, "nationality"),
-        ("Driver nationality", "Italian", driverNationality, "nationality"),
-        ("Driver nationality", "French", driverNationality, "nationality"),
-        ("Driver nationality", "Brazilian", driverNationality, "nationality")
+        (0, "Driver nationality", "German", driverNationality, "nationality"),
+        (1, "Driver nationality", "British", driverNationality, "nationality"),
+        (2, "Driver nationality", "Italian", driverNationality, "nationality"),
+        (3, "Driver nationality", "French", driverNationality, "nationality"),
+        (4, "Driver nationality", "Brazilian", driverNationality, "nationality")
     ]
     questions2 = [ # Medium questions
-        ("Driver nationality", "American", driverNationality, "nationality"),
-        ("Driver nationality", "Australian", driverNationality, "nationality"),
-        ("Driver nationality", "Spanish", driverNationality, "nationality"),
+        (100, "Driver nationality", "American", driverNationality, "nationality"),
+        (101, "Driver nationality", "Australian", driverNationality, "nationality"),
+        (102, "Driver nationality", "Spanish", driverNationality, "nationality"),
     ]
     questions3 = [ # Hard questions
-        ("Driver nationality", "Japanese", driverNationality, "nationality"),
-        ("Driver nationality", "Canadian", driverNationality, "nationality"),
-        ("Driver nationality", "Finnish", driverNationality, "nationality"),
+        (200, "Driver nationality", "Japanese", driverNationality, "nationality"),
+        (201, "Driver nationality", "Canadian", driverNationality, "nationality"),
+        (202, "Driver nationality", "Finnish", driverNationality, "nationality"),
     ]
 
-    def __init__(self, difficulty:int, setseed:int=None) -> None:
+    def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty, setseed=setseed)
+        self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
 class DriverTeamQuestion(Question):
     questions1 = [ # Easy questions
-        ("Driven for team", "Williams", driverTeam, "teams", "name"),
-        ("Driven for team", "McLaren", driverTeam, "teams", "name"),
-        ("Driven for team", "Ferrari", driverTeam, "teams", "name")
+        (0, "Driven for team", "Williams", driverTeam, "teams", "name"),
+        (1, "Driven for team", "McLaren", driverTeam, "teams", "name"),
+        (2, "Driven for team", "Ferrari", driverTeam, "teams", "name"),
+        (3, "Driven for team", "Team Lotus", driverTeam, "teams", "name")
     ]
     questions2 = [ # Medium questions
-        ("Driven for team", "Mercedes", driverTeam, "teams", "name"),
-        ("Driven for team", "Red Bull", driverTeam, "teams", "name"),
-        ("Driven for team", "Renault", driverTeam, "teams", "name")
+        (100, "Driven for team", "Mercedes", driverTeam, "teams", "name"),
+        (101, "Driven for team", "Red Bull", driverTeam, "teams", "name"),
+        (102, "Driven for team", "Renault", driverTeam, "teams", "name")
     ]
     questions3 = [ # Hard questions
-        ("Driven for team", "Sauber", driverTeam, "teams", "name"),
-        ("Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
+        (200, "Driven for team", "Sauber", driverTeam, "teams", "name"),
+        (201, "Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
+        (202, "Driven for team", "Jordan", driverTeam, "teams", "name")
     ]
 
-    def __init__(self, difficulty:int, setseed:int=None) -> None:
+    def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty, setseed=setseed)
+        self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
 class DriverSpecialQuestion(Question):
     questions1 = [
-        ("Has had teammate", "Michael Schumacher", hasTeammate, "teammates")
+        (0, "WILDCARD", "FREE SPACE", wildcard)
     ]
-    questions2 = []
+    questions2 = [
+        (100, "Has had teammate", "Michael Schumacher", hasTeammate, "teammates"),
+        (101, "Has had teammate", "Kimi Räikkönen", hasTeammate, "teammates"),
+        (102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
+    ]
     questions3 = []
 
-    def __init__(self, difficulty, setseed:int=None) -> None:
+    def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
-        self.choose_question(difficulty, setseed=setseed)
+        self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
-def new_question(difficulty:int, questiontype:int, setseed=None) -> Question:
+def new_question(difficulty:int, questiontype:int, setseed=None, questionID:int=None) -> Question:
     """
     Create a new question
     Parameters:
         difficulty: int; difficulty of question, 1 = Easy, 2 = Medium, 3 = Hard
         questiontype: int; type of quetion to be asked.
-            1 = 50% driver achievment question, 50% driver nationality question
-            2 = 50% driver achievment question, 50% driver team question
+            1 = DriverAchievmentQuestion
+            2 = DriverDataQuestion
+            3 = DriverTeamQuestion
+            4 = DriverSpecialQuestion
     Outputs:
         question: Question; randomly selected question type.
     """
     assert isinstance(difficulty, int) and 1 <= difficulty <= 3, "Difficulty must be integer 1-3"
-    assert isinstance(questiontype, int) and 1 <= questiontype <= 2, "Questiontype must be integer 1-2"
-    achievment = random.randint(1,2)
-    if achievment == 2:
-        return DriverAchievmentQuestion(difficulty, setseed=setseed)
-    elif questiontype == 1:
-        return DriverDataQuestion(difficulty, setseed=setseed)
+    assert isinstance(questiontype, int) and 1 <= questiontype <= 4, "Questiontype must be integer 1-2"
+    if questiontype == 1:
+        return DriverAchievmentQuestion(difficulty, setseed=setseed, questionID=questionID)
     elif questiontype == 2:
-        return DriverTeamQuestion(difficulty, setseed=setseed)
+        return DriverDataQuestion(difficulty, setseed=setseed, questionID=questionID)
+    elif questiontype == 3:
+        return DriverTeamQuestion(difficulty, setseed=setseed, questionID=questionID)
+    elif questiontype == 4:
+        return DriverSpecialQuestion(difficulty, setseed=setseed, questionID=questionID)
 

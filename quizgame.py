@@ -134,27 +134,33 @@ class QuizGame():
             Adds questions to self.col_questions and self.row_questions
             Returns None
         """
+        reset = False
         self.guesses = self.n_columns * self.n_rows
         while len(self.col_questions) < self.n_columns:
-            n = len(self.col_questions)
-            question = new_question(min([self.difficulty, n+1]), 1, setseed=self.seed)
+            n_col = len(self.col_questions)
+            question = new_question(min([self.difficulty, n_col+1]), 1, setseed=self.seed)
             self.seed = random.random()
             if question not in self.col_questions:
                 self.set_col_question(question)
         while len(self.row_questions) < self.n_rows:
-            n = len(self.col_questions)
+            i = 0
+            n_row = len(self.row_questions)
             valid_question = False
             while not valid_question:
-                question = new_question(min([self.difficulty, n+1]), 2, setseed=self.seed)
+                question = new_question(min([self.difficulty, n_row+1]), 2, setseed=self.seed)
                 self.seed = random.random()
                 valid_question = True
                 for col_question in self.col_questions:
                     if not question.validate_question(col_question, self.validation_list):
                         valid_question = False
+                        i += 1
                         break
+            if i > self.n_columns*2:
+                reset = True
+                break
             if question not in self.row_questions and question not in self.col_questions:
                 self.set_row_question(question)
-        if not self.full_validation():
+        if reset or not self.full_validation():
             self.col_questions = []
             self.row_questions = []
             self.start_game()
@@ -246,10 +252,18 @@ class QuizGame():
             Returns None
         """
         for n in range(self.n_columns):
-            print(self.colnames[n] + ": " + str(self.col_questions[n]))
+            if n < len(self.col_questions):
+                question_str = str(self.col_questions[n])
+            else:
+                question_str = "BLANK QUESTION"
+            print(self.colnames[n] + ": " + question_str)
         print("\n", end="")
         for n in range(self.n_rows):
-            print(self.rownames[n] + ": " + str(self.row_questions[n]))
+            if n < len(self.row_questions):
+                question_str = str(self.row_questions[n])
+            else:
+                question_str = "BLANK QUESTION"
+            print(self.rownames[n] + ": " + question_str)
     
     def print_cell_question(self, col:int, row:int) -> str:
         """
