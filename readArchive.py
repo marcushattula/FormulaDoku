@@ -298,4 +298,6 @@ class ArchiveReader():
 if __name__ == "__main__":
     
     myArchive = ArchiveReader(archive_path=ARCHIVE_FILE)
+    myArchive.process_races()
+    myArchive.process_seasons()
     breakpoint()
