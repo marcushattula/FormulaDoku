@@ -262,9 +262,15 @@ class Race(MyDataClass):
             pos = self.get_position(entrant)
             points_driver = self.score_for_pos(pos, pointssystem)
             if entrant in self.get_fastest_lap() and self.eligible_for_fastest_lap(pos, fastest_lap_tuple):
-                if len(self.get_fastest_lap()) > 1 and self.year == 2024:
-                    breakpoint()
-                points_driver += fastest_lap_tuple[0]/len(self.get_fastest_lap())
+                # HARDCODED FIX: NOT AWARDED FOR 2021 Belgian GP
+                if str(self) == "2021 Belgian Grand Prix":
+                    pass
+                # # HARDCODED FIX: MISSING LAP TIME DATA FOR 2024 MONACO GP
+                elif str(self) == "2024 Monaco Grand Prix":
+                    if entrant[0].fullname == "Lewis Hamilton":
+                        points_driver += fastest_lap_tuple[0]
+                else:
+                    points_driver += fastest_lap_tuple[0]/len(self.get_fastest_lap())
             if self.sprint_event:
                 sprint_pos = self.get_sprint_position(entrant)
                 points_driver += self.score_for_pos(sprint_pos, sprint_pointssystem)
