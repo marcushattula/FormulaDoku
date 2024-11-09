@@ -21,6 +21,7 @@ class Driver(MyDataClass):
         self.teammates = []
         self.season_data = {}
         self.race_entries = {}
+        self.season_entries = {}
     
     def __str__(self):
         """
@@ -71,4 +72,41 @@ class Driver(MyDataClass):
             self.race_entries[year].append(race)
         else:
             self.race_entries[year] = [race]
-        
+
+    def add_season_to_data(self, season):
+        """
+        Add a season to this driver's data
+        Parameters:
+            season: Season; season object
+        Outputs:
+            Adds data to self
+        """
+        year = season.year
+        self.season_entries[year] = season
+
+    
+    def get_season_data(self, year:int):
+        """
+        Get the results of this driver for a given year
+        Parameters:
+            year: int; the year to get the results of
+        Outputs:
+            results: dict; dictionary with the following fields:
+                champion: bool
+                entries: list[Race]
+                teammates: list[Driver]
+                wins: list[int]
+                podiums: list[int]
+                poles: list[int]
+                points: list[int]
+                
+        """
+    
+    def get_carreer_data(self):
+        """
+        Get the combined results of this driver
+        Parameters:
+            None
+        Outputs:
+            career_data: dict; dictionary with the following fields:
+        """
