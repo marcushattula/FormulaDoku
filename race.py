@@ -165,6 +165,7 @@ class Race(MyDataClass):
             finisher = self.get_finish()[i]
             if driver in finisher:
                 return i + 1
+        return None
 
     def get_sprint_finish(self) -> list[Driver]:
         """
@@ -269,7 +270,8 @@ class Race(MyDataClass):
                 elif str(self) == "2024 Monaco Grand Prix":
                     if entrant[0].fullname == "Lewis Hamilton":
                         points_driver += fastest_lap_tuple[0]
-                else:
+                elif fastest_lap_tuple[0]:
+                    assert len(self.get_fastest_lap()) < 8, f"Missing lap time data for {str(self)}!"
                     points_driver += fastest_lap_tuple[0]/len(self.get_fastest_lap())
             if self.sprint_event:
                 sprint_pos = self.get_sprint_position(entrant)

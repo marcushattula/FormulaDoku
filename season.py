@@ -20,6 +20,23 @@ SPRINT_POINTS_SYSTEMS = [
     [8, 7, 6, 5, 4, 3, 2, 1]
 ]
 
+BEST_OF_N_CHAMPION = [
+    (4), # 1950-1953
+    (5), # 1954-1957, 1959, 1961-1962, 1966
+    (6), # 1958, 1960, 1963-1965
+    ((5,6),(4,5)), # 1967, 1969
+    ((5,6),(5,6)), # 1968, 1972
+    ((6,7),(5,6)), # 1970-1971
+    ((7,8),(6,7)), # 1973, 1975
+    ((7,8),(7,8)), # 1974, 1976, 1978
+    ((8,9),(7,8)), # 1977
+    ((4,7),(4,8)), # 1979
+    ((5,7),(5,7)), # 1980
+    (10), # 1981
+    (11), # 1982-1990
+    (0), # 1991-
+]
+
 FASTEST_LAP_POINTS = 1
 RECURSION_LIMIT = 50
 
@@ -80,9 +97,20 @@ class Season(MyDataClass):
         for race in self.races:
             race_driver_points = race.points_per_driver
             if driver in race_driver_points.keys():
-                points = race_driver_points[driver] if race_driver_points[driver] != None else 0
+                points = race_driver_points[driver]# if race_driver_points[driver] != None else 0
                 points_per_race.append(points)
+            else:
+                points_per_race.append(None)
         return points_per_race
+
+    def get_all_driver_points(self):
+        """
+        Get the finishing position of each driver for every race
+        """
+        full_standings = {}
+        for entrant in self.driver_standings.keys():
+            full_standings[entrant] = self.get_points(entrant)
+        return full_standings
 
     def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
         """
@@ -144,6 +172,47 @@ class Season(MyDataClass):
         else:
             return (0, 0)
 
+    def select_champion_method(self):
+        """
+        Select which method to use to determine champion
+        Parameters:
+            None
+        Outputs:
+            best_of_n: Any; championship determining parameter
+        """
+        year = self.year
+        assert year >= 1950, "Invalid year!"
+        if 1950 <= year <= 1953:
+            return BEST_OF_N_CHAMPION[0]
+        elif year in [1954, 1955, 1956, 1957, 1959, 1961, 1962, 1966]:
+            return BEST_OF_N_CHAMPION[1]
+        elif year in [1958, 1960, 1963, 1964, 1965]:
+            return BEST_OF_N_CHAMPION[2]
+        elif year in [1967, 1969]:
+            return BEST_OF_N_CHAMPION[3]
+        elif year in [1968, 1972]:
+            return BEST_OF_N_CHAMPION[4]
+        elif year in [1970, 1971]:
+            return BEST_OF_N_CHAMPION[5]
+        elif year in [1973, 1975]:
+            return BEST_OF_N_CHAMPION[6]
+        elif year in [1974, 1976, 1978]:
+            return BEST_OF_N_CHAMPION[7]
+        elif year == 1977:
+            return BEST_OF_N_CHAMPION[8]
+        elif year == 1979:
+            return BEST_OF_N_CHAMPION[9]
+        elif year == 1980:
+            return BEST_OF_N_CHAMPION[10]
+        elif year == 1981:
+            return BEST_OF_N_CHAMPION[11]
+        elif 1982 <= year <= 1990:
+            return BEST_OF_N_CHAMPION[12]
+        elif 1991 <= year:
+            return BEST_OF_N_CHAMPION[13]
+        else:
+            raise AssertionError("WTF??")       
+
     def update_standings(self) -> list[Driver]:
         """
         Resolve a tie between two drivers with the same number of points
@@ -190,7 +259,7 @@ class Season(MyDataClass):
         tiebroken = []
         points_dist = {}
         for driver in self.driver_standings.keys():
-            driver_points = sum(self.get_points(driver))
+            driver_points = sum(filter(None, self.get_points(driver)))
             if driver_points in points_dist:
                 points_dist[driver_points].append(driver)
             else:
@@ -203,8 +272,7 @@ class Season(MyDataClass):
                 tiebroken.extend(tiebreaker(points_dist[point_score]))
         return tiebroken
         
-
-    def determine_champion(self, best_of_n:int=0) -> None:
+    def determine_champion(self, best_of_n) -> None:
         """
         Determine the champion of this season
         Parameters:
@@ -213,9 +281,28 @@ class Season(MyDataClass):
             None
             driver determined to be champion is set to self.champion
         """
-        if best_of_n <= 0:
+        if best_of_n == 0: # Most points total
             return self.update_standings()[0]
-
+        elif isinstance(best_of_n, int): # Best n finishes
+            champion = (None, None) # Champion in (entrant, points)
+            points_dist = self.get_all_driver_points()
+            for entrant in points_dist.keys():
+                entrant_points_ordered = sorted(filter(None, points_dist[entrant]), reverse=True)
+                entrant_best_of_n = sum(entrant_points_ordered[0:best_of_n])
+                if champion[1] == None or entrant_best_of_n > champion[1]:
+                    champion = (entrant, entrant_best_of_n)
+            return champion[0]
+        else: # Best n of first m races and best i of last k races, ((n,m),(i,k))
+            assert len(best_of_n) == 2 and all([len(x) == 2 for x in best_of_n]), "Incorrect formatting of championship best of n!"
+            champion = (None, None) # Champion in (entrant, points)
+            points_dist = self.get_all_driver_points()
+            for entrant in points_dist.keys():
+                results = points_dist[entrant]
+                set1 = sorted(filter(None, results[0:best_of_n[0][1]]), reverse=True)
+                set2 = sorted(filter(None, results[best_of_n[0][1]:]), reverse=True)
+                if champion[1] == None or set1+set2 > champion[1]:
+                    champion = (entrant, set1+set2)
+            return champion
 
     def award_points(self, pointssystem=None):
         """
@@ -264,4 +351,4 @@ class Season(MyDataClass):
                     self.constuctor_standings[constructor] = [constructor_points[constructor]]
 
         # Award championships
-        self.determine_champion()
+        self.determine_champion(self.select_champion_method())
