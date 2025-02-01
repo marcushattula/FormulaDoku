@@ -12,7 +12,7 @@ from season import Season
 from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question
 from quizgame import QuizGame, DriverQuiz
 
-TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
+TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=False)
 
 def error_msg(attr:str, expected, got):
     """
@@ -151,10 +151,10 @@ class TestArchiveReader(unittest.TestCase):
 
     def test_Reader(self):
         self.assertTrue(len(TESTARCHIVE.circuits) == 77)
-        self.assertTrue(len(TESTARCHIVE.constructors) == 211)
-        self.assertTrue(len(TESTARCHIVE.drivers) == 857)
-        self.assertTrue(len(TESTARCHIVE.races) == 1101)
-        self.assertTrue(len(TESTARCHIVE.seasons) == 74)
+        self.assertTrue(len(TESTARCHIVE.constructors) == 212)
+        self.assertTrue(len(TESTARCHIVE.drivers) == 860)
+        self.assertTrue(len(TESTARCHIVE.races) == 1125)
+        self.assertTrue(len(TESTARCHIVE.seasons) == 75)
 
 
 class TestMyDataClasses(unittest.TestCase):

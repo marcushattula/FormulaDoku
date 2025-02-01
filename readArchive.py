@@ -5,6 +5,7 @@ from circuit import Circuit
 from constructor import Constructor
 from season import Season
 from race import Race
+from hardcodes import amend_missing_race_data
 import shutil
 import csv
 
@@ -299,5 +300,6 @@ if __name__ == "__main__":
     
     myArchive = ArchiveReader(archive_path=ARCHIVE_FILE)
     myArchive.process_races()
+    amend_missing_race_data(myArchive)
     myArchive.process_seasons()
     breakpoint()
