@@ -41,8 +41,9 @@ class Race(MyDataClass):
         self.finish = []
         self.sprint_event = False # Flag for if race had sprint event, assumed false unless add_sprint_entrant() method is called
         self.sprint_finish = []
-        self.fastest_drivers = []
+        self.fastest_drivers = None
         self.points_per_driver = {}
+        self.half_points = None # None if not half points awarded for this race, else is list of new points
         
     def __str__(self):
         """
@@ -207,7 +208,7 @@ class Race(MyDataClass):
         Outputs:
             fastest_driver: list[Driver]; Driver(s) who set the fastest lap
         """
-        if not self.fastest_drivers:
+        if self.fastest_drivers == None:
             assert len(self.entrants) > 0, f"Uninitialized entrants! Use method add_entrant()!"
             fastest_time = None
             fastest_drivers = []
@@ -234,7 +235,7 @@ class Race(MyDataClass):
             points: int; How many points are scored for said finish
         """
         assert isinstance(finish_pos, int), "Finishing position must be integer!"
-        assert isinstance(points_system, list) and all([isinstance(x, int) for x in points_system]), "Points system must be list of ints!"
+        assert isinstance(points_system, list) and all([isinstance(x, int) or isinstance(x, float) for x in points_system]), "Points system must be list of ints or floats!"
         if finish_pos > len(points_system):
             return NON_SCORING_POS_POINTS
         else:
@@ -261,18 +262,10 @@ class Race(MyDataClass):
         driver_points = {}
         for entrant in self.entrants.keys():
             pos = self.get_position(entrant)
-            points_driver = self.score_for_pos(pos, pointssystem)
-            if entrant in self.get_fastest_lap() and self.eligible_for_fastest_lap(pos, fastest_lap_tuple):
-                # HARDCODED FIX: NOT AWARDED FOR 2021 Belgian GP
-                if str(self) == "2021 Belgian Grand Prix":
-                    pass
-                # # HARDCODED FIX: MISSING LAP TIME DATA FOR 2024 MONACO GP
-                elif str(self) == "2024 Monaco Grand Prix":
-                    if entrant[0].fullname == "Lewis Hamilton":
-                        points_driver += fastest_lap_tuple[0]
-                elif fastest_lap_tuple[0]:
-                    assert len(self.get_fastest_lap()) < 8, f"Missing lap time data for {str(self)}!"
-                    points_driver += fastest_lap_tuple[0]/len(self.get_fastest_lap())
+            points_driver = self.score_for_pos(pos, pointssystem)/len(self.get_finish()[pos-1])
+            if entrant in self.get_fastest_lap() and self.eligible_for_fastest_lap(pos, fastest_lap_tuple) and fastest_lap_tuple[0]:
+                assert len(self.get_fastest_lap()) < 8 and fastest_lap_tuple[0], f"Missing lap time data for {str(self)}!"
+                points_driver += fastest_lap_tuple[0]/len(self.get_fastest_lap())
             if self.sprint_event:
                 sprint_pos = self.get_sprint_position(entrant)
                 points_driver += self.score_for_pos(sprint_pos, sprint_pointssystem)

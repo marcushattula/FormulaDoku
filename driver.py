@@ -99,8 +99,12 @@ class Driver(MyDataClass):
                 podiums: list[int]
                 poles: list[int]
                 points: list[int]
-                
         """
+        season = self.season_entries[year]
+        results = {
+            "champion": season.champion[0] == self,
+        }
+        # TODO: Finish implementing
     
     def get_carreer_data(self):
         """
