@@ -49,7 +49,8 @@ class Season(MyDataClass):
         self.data_fields = SEASON_DATA_FIELDS
         self.races: list[Race] = []
         self.season_data = {} # driver: season_data
-        self.driver_standings = {}
+        self.driver_full_standings = {}
+        self.driver_championship_standings = {}
         self.constuctor_standings = {}
         self.champion = None
     
@@ -93,6 +94,7 @@ class Season(MyDataClass):
         """
         Return the points scored from each race for a driver
         """
+        return [None if driver not in race._saved_points.keys() else race._saved_points[driver] for race in self.races]
         points_per_race = []
         for race in self.races:
             race_driver_points = race.points_per_driver
@@ -108,7 +110,7 @@ class Season(MyDataClass):
         Get the finishing position of each driver for every race
         """
         full_standings = {}
-        for entrant in self.driver_standings.keys():
+        for entrant in self.driver_full_standings.keys():
             full_standings[entrant] = self.get_points(entrant)
         return full_standings
 
@@ -121,7 +123,7 @@ class Season(MyDataClass):
             driverstats: dict; dictionary with the following key-value pairs:
 
         """
-        entrants = [entrant for entrant in self.driver_standings.keys() if entrant[0].fullname == driver.fullname]
+        entrants = [entrant for entrant in self.driver_full_standings.keys() if entrant[0].fullname == driver.fullname]
         # TODO: Finish implementing
 
     def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
@@ -245,12 +247,12 @@ class Season(MyDataClass):
                 elif finish_pos > RECURSION_LIMIT:
                     raise RecursionError("Unresolved tie")
                 pos_finishes = {}
-                for driver in driverarr:
-                    n_finishes = self.get_results(driver).count(finish_pos)
+                for entrant in driverarr:
+                    n_finishes = self.get_results(entrant).count(finish_pos)
                     if n_finishes in pos_finishes:
-                        pos_finishes[n_finishes].append(driver)
+                        pos_finishes[n_finishes].append(entrant)
                     else:
-                        pos_finishes[n_finishes] = [driver]
+                        pos_finishes[n_finishes] = [entrant]
                 for n_finish in sorted(pos_finishes.keys(), reverse=True):
                     if len(pos_finishes[n_finish]) == 1:
                         ordered.append(pos_finishes[n_finish][0])
@@ -270,7 +272,7 @@ class Season(MyDataClass):
 
         tiebroken = []
         points_dist = {}
-        for driver in self.driver_standings.keys():
+        for driver in self.driver_full_standings.keys():
             driver_points = sum(filter(None, self.get_points(driver)))
             if driver_points in points_dist:
                 points_dist[driver_points].append(driver)
@@ -290,7 +292,7 @@ class Season(MyDataClass):
         """
         return [(entrant, sum(filter(None, self.get_points(entrant)))) for entrant in self.update_standings()]
 
-    def determine_champion(self, best_of_n) -> None:
+    def determine_driver_champion(self, best_of_n) -> None:
         """
         Determine the champion of this season
         Parameters:
@@ -307,20 +309,22 @@ class Season(MyDataClass):
             for entrant in points_dist.keys():
                 entrant_points_ordered = sorted(filter(None, points_dist[entrant]), reverse=True)
                 entrant_best_of_n = sum(entrant_points_ordered[0:best_of_n])
+                self.driver_championship_standings[entrant] = entrant_best_of_n
                 if champion[1] == None or entrant_best_of_n > champion[1]:
                     champion = (entrant, entrant_best_of_n)
-            self.champion = champion
+            self.champion = champion[0]
         else: # Best n of first m races and best i of last k races, ((n,m),(i,k))
             assert len(best_of_n) == 2 and all([len(x) == 2 for x in best_of_n]), "Incorrect formatting of championship best of n!"
             champion = (None, None) # Champion in (entrant, points)
             points_dist = self.get_all_driver_points()
             for entrant in points_dist.keys():
                 results = points_dist[entrant]
-                set1 = sorted(filter(None, results[0:best_of_n[0][1]]), reverse=True)
-                set2 = sorted(filter(None, results[best_of_n[0][1]:]), reverse=True)
+                set1 = sum(sorted(filter(None, results[0:best_of_n[0][1]]), reverse=True))
+                set2 = sum(sorted(filter(None, results[best_of_n[0][1]:]), reverse=True))
+                self.driver_championship_standings[entrant] = set1 + set2
                 if champion[1] == None or set1+set2 > champion[1]:
                     champion = (entrant, set1+set2)
-            self.champion = champion
+            self.champion = champion[0]
 
     def award_points(self, pointssystem=None):
         """
@@ -362,10 +366,10 @@ class Season(MyDataClass):
             driver_points = race.calculate_driver_points(points_arr, points_arr_driver_sprint, fastest_lap_points)
             constructor_points = race.calculate_constructor_points(points_arr_constructor, fastest_lap_points)
             for entrant in driver_points.keys():
-                if entrant in self.driver_standings.keys() and isinstance(self.driver_standings[entrant], list):
-                    self.driver_standings[entrant].append(driver_points[entrant])
+                if entrant in self.driver_full_standings.keys() and isinstance(self.driver_full_standings[entrant], list):
+                    self.driver_full_standings[entrant].append(driver_points[entrant])
                 else:
-                    self.driver_standings[entrant] = [driver_points[entrant]]
+                    self.driver_full_standings[entrant] = [driver_points[entrant]]
             for constructor in constructor_points:
                 if constructor in self.constuctor_standings:
                     self.constuctor_standings[constructor].append(constructor_points[constructor])
@@ -373,4 +377,4 @@ class Season(MyDataClass):
                     self.constuctor_standings[constructor] = [constructor_points[constructor]]
 
         # Award championships
-        self.determine_champion(self.select_champion_method())
+        self.determine_driver_champion(self.select_champion_method())

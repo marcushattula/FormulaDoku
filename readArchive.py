@@ -253,9 +253,9 @@ class ArchiveReader():
                 if season not in champions_dict or driver.season_data[season]["points"] > champions_dict[season].season_data[season]["points"]:
                     champions_dict[season] = driver
         # SPECIAL CASE!!! Surtees won 1964, although he did not score the most points. This is a hardcoded fix.
-        champions_dict[1964] = find_single_object_by_field_value(self.drivers, "driverId", 341)
+        #champions_dict[1964] = find_single_object_by_field_value(self.drivers, "driverId", 341)
         # SPECIAL CASE!!! Senna won 1988, although he did not score the most points. This is a hardcoded fix.
-        champions_dict[1988] = find_single_object_by_field_value(self.drivers, "driverId", 102)
+        #champions_dict[1988] = find_single_object_by_field_value(self.drivers, "driverId", 102)
         for year in champions_dict:
             champions_dict[year].championships += 1
 
