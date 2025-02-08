@@ -83,8 +83,7 @@ class Driver(MyDataClass):
         """
         year = season.year
         self.season_entries[year] = season
-
-    
+  
     def get_season_data(self, year:int):
         """
         Get the results of this driver for a given year
@@ -100,22 +99,19 @@ class Driver(MyDataClass):
                 poles: list[int]
                 points: list[int]
         """
-        season = self.season_entries[year]
-        races = season.races
-        driverstats = season.get_driver_stats(self)
-        results = {
-            "champion": season.champion[0] == self,
-            "entries": len([x for x in races if self in [ent[0] for ent in x.entrants]]),
-            "teammates": driverstats["teammates"],
-            "wins": None,
-            "podiums": None,
-            "poles": None,
-            "points": None
-        }
-        return results
-        # TODO: Finish implementing
+        return self.get_all_seasons_data()[year]
     
-    def get_carreer_data(self):
+    def get_all_seasons_data(self):
+        if hasattr(self, "_all_seasons_data") and self._all_seasons_data:
+            return self._all_seasons_data
+        all_season_data = {}
+        for season_year in self.season_entries.keys():
+            season = self.season_entries[season_year]
+            all_season_data[season_year] = season.get_driver_stats(self)
+        self._all_seasons_data = all_season_data
+        return self.get_all_seasons_data()
+
+    def get_career_data(self):
         """
         Get the combined results of this driver
         Parameters:
@@ -123,3 +119,32 @@ class Driver(MyDataClass):
         Outputs:
             career_data: dict; dictionary with the following fields:
         """
+        if hasattr(self, "_career_data") and self._career_data:
+            return self._career_data
+        career_results = {
+            "n_championships": 0,
+            "n_entries": 0,
+            "n_wins": 0,
+            "n_podiums": 0,
+            "n_poles": 0,
+            "n_points": 0,
+            "n_sprint_entries": 0,
+            "n_sprint_wins": 0,
+            "n_sprint_podiums": 0,
+            "n_sprint_poles": 0
+        }
+        for season_year in self.season_entries.keys():
+            season_data = self.get_season_data(season_year)
+            career_results["n_championships"] += season_data["champion"]
+            career_results["n_entries"] += season_data["n_entries"]
+            career_results["n_wins"] += season_data["n_wins"]
+            career_results["n_podiums"] += season_data["n_podiums"]
+            career_results["n_poles"] += season_data["n_poles"]
+            career_results["n_points"] += season_data["n_points"]
+            career_results["n_sprint_entries"] += season_data["n_sprint_entries"]
+            career_results["n_sprint_wins"] += season_data["n_sprint_wins"]
+            career_results["n_sprint_podiums"] += season_data["n_sprint_podiums"]
+            career_results["n_sprint_poles"] += season_data["n_sprint_poles"]
+        self._career_data = career_results
+        return self.get_career_data()
+    

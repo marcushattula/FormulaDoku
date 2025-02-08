@@ -292,12 +292,9 @@ class AnswerBox(QMainWindow):
         return scroll
 
     def top_row(self, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
-        field1 = question1.question[4]
-        field2 = question2.question[4]
-
         label1 = QLabel("Valid answer")
-        label2 = QLabel(field1.capitalize())
-        label3 = QLabel(field2.capitalize())
+        label2 = QLabel(str(question1))
+        label3 = QLabel(str(question2))
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)

@@ -38,3 +38,13 @@ def isFloat(input_str:str) -> bool:
         return False
     else:
         return True
+
+def sumWithNone(num_list:list) -> float:
+    """
+    Sum list with numbers and nones
+    Parameters:
+        num_list: list[int | float | None]; list of ints, floats and None to be summed
+    Outputs:
+        sum: int; sum of num_list, with None mapped to 0
+    """
+    return sum([0 if x == None else x for x in num_list])

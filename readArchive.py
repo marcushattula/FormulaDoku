@@ -35,6 +35,9 @@ class ArchiveReader():
         self.races = self.open_races()
         self.seasons = self.open_seasons()
         self.read_driver_results()
+        self.process_races()
+        amend_missing_race_data(self)
+        self.process_seasons()
 
     def init_db(self, archive_path:str=None, target_path:str=None) -> str:
         """
@@ -210,19 +213,19 @@ class ArchiveReader():
                         driver.teams.append(constructor)
                     if driver not in constructor.drivers:
                         constructor.drivers.append(driver)
-                    driver.entries += 1
-                    driver.add_to_season_data(year, "entries", 1)
-                    if row[5] == '1':
-                        driver.poles += 1
-                        driver.add_to_season_data(year, "poles", 1)
-                    if row[6] == '1':
-                        driver.wins += 1
-                        driver.add_to_season_data(year, "wins", 1)
-                    if row[6] in ['1','2','3']:
-                        driver.podiums += 1
-                        driver.add_to_season_data(year, "podiums", 1)
-                    driver.career_points += float(row[9])
-                    driver.add_to_season_data(year, "points", float(row[9]))
+                    # driver.entries += 1
+                    # driver.add_to_season_data(year, "entries", 1)
+                    # if row[5] == '1':
+                    #     driver.poles += 1
+                    #     driver.add_to_season_data(year, "poles", 1)
+                    # if row[6] == '1':
+                    #     driver.wins += 1
+                    #     driver.add_to_season_data(year, "wins", 1)
+                    # if row[6] in ['1','2','3']:
+                    #     driver.podiums += 1
+                    #     driver.add_to_season_data(year, "podiums", 1)
+                    # driver.career_points += float(row[9])
+                    # driver.add_to_season_data(year, "points", float(row[9]))
                 line_count += 1
 
         # Read sprint results
@@ -239,25 +242,25 @@ class ArchiveReader():
                     driver = find_single_object_by_field_value(self.drivers, "driverId", int(row[2]))
                     constructor = find_single_object_by_field_value(self.constructors, "constructorId", int(row[3]))
                     race.add_sprint_entrant(driver, constructor, row)
-                    if row[6] == '1':
-                        driver.sprint_wins += 1
-                        driver.add_to_season_data(year, "sprint_wins", 1)
-                    driver.career_points += float(row[9])
-                    driver.add_to_season_data(year, "points", float(row[9]))
+                    # if row[6] == '1':
+                    #     driver.sprint_wins += 1
+                    #     driver.add_to_season_data(year, "sprint_wins", 1)
+                    # driver.career_points += float(row[9])
+                    # driver.add_to_season_data(year, "points", float(row[9]))
                 line_count += 1
         
-        # Determine champion of each year
-        champions_dict = {}
-        for driver in self.drivers:
-            for season in driver.season_data:
-                if season not in champions_dict or driver.season_data[season]["points"] > champions_dict[season].season_data[season]["points"]:
-                    champions_dict[season] = driver
-        # SPECIAL CASE!!! Surtees won 1964, although he did not score the most points. This is a hardcoded fix.
-        #champions_dict[1964] = find_single_object_by_field_value(self.drivers, "driverId", 341)
-        # SPECIAL CASE!!! Senna won 1988, although he did not score the most points. This is a hardcoded fix.
-        #champions_dict[1988] = find_single_object_by_field_value(self.drivers, "driverId", 102)
-        for year in champions_dict:
-            champions_dict[year].championships += 1
+        # # Determine champion of each year
+        # champions_dict = {}
+        # for driver in self.drivers:
+        #     for season in driver.season_data:
+        #         if season not in champions_dict or driver.season_data[season]["points"] > champions_dict[season].season_data[season]["points"]:
+        #             champions_dict[season] = driver
+        # # SPECIAL CASE!!! Surtees won 1964, although he did not score the most points. This is a hardcoded fix.
+        # #champions_dict[1964] = find_single_object_by_field_value(self.drivers, "driverId", 341)
+        # # SPECIAL CASE!!! Senna won 1988, although he did not score the most points. This is a hardcoded fix.
+        # #champions_dict[1988] = find_single_object_by_field_value(self.drivers, "driverId", 102)
+        # for year in champions_dict:
+        #     champions_dict[year].championships += 1
 
     def process_races(self) -> None:
         """
@@ -273,7 +276,6 @@ class ArchiveReader():
         Reads self.seasons and adds appropriate data to different fields
         """
         for season in self.seasons:
-            season.set_teammates()
             season.award_points()
 
     def get_category(self, listname:str, categoryname:str) -> list:
@@ -300,7 +302,4 @@ class ArchiveReader():
 if __name__ == "__main__":
     
     myArchive = ArchiveReader(archive_path=ARCHIVE_FILE)
-    myArchive.process_races()
-    amend_missing_race_data(myArchive)
-    myArchive.process_seasons()
     breakpoint()

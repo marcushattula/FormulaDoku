@@ -230,15 +230,11 @@ class Race(MyDataClass):
         self.data_fields = RACE_DATA_FIELDS
         for data_field in self.data_fields:
             setattr(self, data_field, None)
-        self.entrants = {}
-        self.sprint_entrants = {}
-        self.grid = []
-        self.finish = []
-        self.finish_new:ResultOrder = None
+        self.finish:ResultOrder = None
+        self.grid:GridOrder = None
         self.sprint_event = False # Flag for if race had sprint event, assumed false unless add_sprint_entrant() method is called
-        self.sprint_finish = []
-        self.sprint_new = None
-        self.sprint_grid_new = None
+        self.sprint = None
+        self.sprint_grid = None
         self.fastest_drivers = None
         self.points_per_driver = {}
         self.half_points = None # None if not half points awarded for this race, else is list of new points
@@ -253,8 +249,8 @@ class Race(MyDataClass):
     
     def read_data(self, data:list[str]):
         self.read_csv_data(data)
-        self.finish_new = RaceOrder(str(self))
-        self.grid_new = GridOrder(str(self))
+        self.finish = RaceOrder(str(self))
+        self.grid = GridOrder(str(self))
     
     def add_circuit(self, circuit:Circuit):
         """
@@ -288,19 +284,15 @@ class Race(MyDataClass):
         results_dict["constructor"] = constructor
         for i in range(4, len(RACE_RESULT_DATA_FIELDS)):
             results_dict[RACE_RESULT_DATA_FIELDS[i]] = results[i]
-        self.entrants[driver_team_tuple] = results_dict
+        # self.entrants[driver_team_tuple] = results_dict
         if constructor in self.teammates.keys() and driver not in self.teammates[constructor]:
             self.teammates[constructor].append(driver)
         else:
             self.teammates[constructor] = [driver]
 
         # New implementation
-        try:
-            self.finish_new.add_result(driver_team_tuple, results_dict)
-            self.grid_new.add_result(driver_team_tuple, results_dict)
-        except Exception as e:
-            print(e)
-            breakpoint()
+        self.finish.add_result(driver_team_tuple, results_dict)
+        self.grid.add_result(driver_team_tuple, results_dict)
    
     def add_sprint_entrant(self, driver:Driver, constructor:Constructor, results:list):
         """
@@ -313,8 +305,6 @@ class Race(MyDataClass):
             Adds team as key and driver as value to self.entrants
         """
         driver_team_tuple = (driver, constructor)
-        if driver_team_tuple in self.sprint_entrants:
-            return {}
         results_dict = {}
         assert isinstance(driver, Driver), "Driver must be instance of class Driver!"
         assert isinstance(constructor, Constructor), "Constructor must be instance of class Constructor!"
@@ -326,16 +316,16 @@ class Race(MyDataClass):
         results_dict["constructor"] = constructor
         for i in range(4, len(SPRINT_RESULT_DATA_FIELDS)):
             results_dict[SPRINT_RESULT_DATA_FIELDS[i]] = results[i]
-        self.sprint_entrants[driver_team_tuple] = results_dict
+        # self.sprint_entrants[driver_team_tuple] = results_dict
         if not self.sprint_event:
             self.sprint_event = True
-            self.sprint_new = SprintOrder(str(self))
-            self.sprint_grid_new = SprintGridOrder(str(self))
+            self.sprint = SprintOrder(str(self))
+            self.sprint_grid = SprintGridOrder(str(self))
         
         # New implementation
         try:
-            self.sprint_new.add_result(driver_team_tuple, results_dict)
-            self.sprint_grid_new.add_result(driver_team_tuple, results_dict)
+            self.sprint.add_result(driver_team_tuple, results_dict)
+            self.sprint_grid.add_result(driver_team_tuple, results_dict)
         except Exception as e:
             print(e)
             breakpoint()
@@ -343,18 +333,21 @@ class Race(MyDataClass):
 
     def reverse_entrants(self, driver=None, constructor=None):
         if driver and constructor and isinstance(driver, Driver) and isinstance(constructor, Constructor):
-            return [x for x in self.entrants.keys() if x == (driver, constructor)]
+            return [x for x in self.get_entrants() if x == (driver, constructor)]
         elif driver and isinstance(driver, Driver):
-            return [x for x in self.entrants.keys() if x[0] == driver]
+            return [x for x in self.get_entrants() if x[0] == driver]
         elif constructor and isinstance(constructor, Constructor):
-            return [x for x in self.entrants.keys() if x[1] == constructor]
+            return [x for x in self.get_entrants() if x[1] == constructor]
         else:
-            return self.entrants.keys()
+            return self.get_entrants()
 
     def reverse_entrant(self, driver=None, constructor=None):
-        entrant = self.reverse_entrant(driver=driver, constructor=constructor)
+        entrant = self.reverse_entrants(driver=driver, constructor=constructor)
         assert len(entrant) == 1, "Found multiple entrants!"
         return entrant[0]
+
+    def get_entrants(self):
+        return self.finish.get_order()
 
     def get_grid(self) -> list[Driver]:
         """
@@ -364,7 +357,7 @@ class Race(MyDataClass):
         Outputs:
             grid: list[Driver]; Grid as ordered list of driver objects
         """
-        return self.grid_new.get_order()
+        return self.grid.get_order()
         if len(self.grid) != 0:
             return self.grid
         else:
@@ -383,7 +376,7 @@ class Race(MyDataClass):
         Outputs:
             finish: list[Driver]; Finish as ordered list of driver objects
         """
-        return self.finish_new.get_order()
+        return self.finish.get_order()
         if len(self.finish) != 0:
             return self.finish
         else:
@@ -402,8 +395,8 @@ class Race(MyDataClass):
         Returns:
             pos: int; finishing position of driver
         """
-        for i in self.finish_new.sorted_order():
-            finisher = self.finish_new[i]
+        for i in self.finish.sorted_order():
+            finisher = self.finish[i]
             if any([driver == ent[0] for ent in finisher.entrants]):
                 return i
         return None
@@ -413,6 +406,9 @@ class Race(MyDataClass):
                 return i + 1
         return None
 
+    def get_sprint_grid(self) -> list[Driver]:
+        return self.sprint_grid.get_order()
+
     def get_sprint_finish(self) -> list[Driver]:
         """
         Get the finishing order of sprint, in ascending order
@@ -421,6 +417,7 @@ class Race(MyDataClass):
         Outputs:
             finish: list[Driver]; Sprint finish as ordered list of driver objects
         """
+        return self.sprint.get_order()
         if len(self.sprint_finish) != 0:
             return self.sprint_finish
         else:
@@ -470,6 +467,27 @@ class Race(MyDataClass):
             assert all([isinstance(fastest_driver[1], Constructor) for fastest_driver in self.fastest_drivers]), f"Fastest team must be class Constructor!"
         return self.fastest_drivers
 
+    def get_winner(self):
+        return self.get_finish()[0]
+    
+    def get_sprint_winner(self):
+        assert self.sprint_event, "Must be sprint event to get sprint winner!"
+        return self.get_sprint_finish()[0]
+
+    def get_podium(self):
+        return self.get_finish()[0:3]
+
+    def get_sprint_podium(self):
+        assert self.sprint_event, "Must be sprint event to get sprint winner!"
+        return self.get_sprint_finish()[0:3]
+
+    def get_pole(self):
+        return self.get_grid()[0]
+    
+    def get_sprint_pole(self):
+        assert self.sprint_event, "Must be sprint event to get sprint winner!"
+        return self.get_sprint_grid()[0]
+
     def score_for_pos(self, finish_pos:int, points_system:list[int]) -> int:
         """
         Retrieve number of points scored for position in event based on poins system
@@ -502,9 +520,9 @@ class Race(MyDataClass):
         Outputs:
             Gives each entrant driver and team their points
         """
-        driver_points = self.finish_new.determine_points(pointssystem, fastest_lap_tuple)
+        driver_points = self.finish.determine_points(pointssystem, fastest_lap_tuple)
         if self.sprint_event:
-            sprint_points = self.sprint_new.determine_points(sprint_pointssystem, (0,0))
+            sprint_points = self.sprint.determine_points(sprint_pointssystem, (0,0))
             for entrant in sprint_points.keys():
                 driver_points[entrant] += sprint_points[entrant]
         driver_points = dict(zip([x[0] for x in driver_points.keys()], driver_points.values()))

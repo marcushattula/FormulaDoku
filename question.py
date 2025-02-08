@@ -1,6 +1,6 @@
 import random
 from mydataclass import MyDataClass
-from globals import remove_accents
+from globals import remove_accents, sumWithNone
 
 def numberWins(n:int, answer:MyDataClass) -> bool:
     """
@@ -9,7 +9,7 @@ def numberWins(n:int, answer:MyDataClass) -> bool:
         n: int; limit
 
     """
-    return answer.wins >= n
+    return answer.get_career_data()["n_wins"] >= n
 
 def numberChampionships(n:int, answer:MyDataClass) -> bool:
     """
@@ -18,7 +18,7 @@ def numberChampionships(n:int, answer:MyDataClass) -> bool:
         n: int; limit
 
     """
-    return answer.championships >= n
+    return answer.get_career_data()["n_championships"] >= n
 
 def numberEntries(n:int, answer:MyDataClass) -> bool:
     """
@@ -27,19 +27,19 @@ def numberEntries(n:int, answer:MyDataClass) -> bool:
         n: int; limit
 
     """
-    return answer.entries >= n
+    return answer.get_career_data()["n_entries"] >= n
 
 def numberPoles(n:int, answer:MyDataClass) -> bool:
-    return answer.poles >= n
+    return answer.get_career_data()["n_poles"] >= n
 
 def numberPodiums(n:int, answer:MyDataClass) -> bool:
-    return answer.podiums >= n
+    return answer.get_career_data()["n_podiums"] >= n
 
 def numberPoints(n:int, answer:MyDataClass) -> bool:
-    return answer.career_points >= n
+    return answer.get_career_data()["n_points"] >= n
 
 def numberSprintWins(n:int, answer:MyDataClass) -> bool:
-    return answer.sprint_wins >= n
+    return answer.get_career_data()["n_sprint_wins"] >= n
 
 def driverNationality(nationality:str, answer:MyDataClass) -> bool:
     """"""
@@ -50,44 +50,48 @@ def driverTeam(team:str, answer:MyDataClass) -> bool:
     return any(constructor.name == team for constructor in answer.teams)
 
 def numberSeasonPoints(n:int, answer:MyDataClass) -> bool:
-    for year in answer.season_data:
-        season = answer.season_data[year]
-        if season["points"] >= n:
-            return True
-    return False
+    return any([len(answer.get_season_data(i)["points"]) >= n for i in answer.season_entries.keys()])
+    # for year in answer.season_data:
+    #     season = answer.season_data[year]
+    #     if season["points"] >= n:
+    #         return True
+    # return False
 
 def numberSeasonPoles(n:int, answer:MyDataClass) -> bool:
-    for year in answer.season_data:
-        season = answer.season_data[year]
-        if season["poles"] >= n:
-            return True
-    return False
+    return any([len(answer.get_season_data(i)["poles"]) >= n for i in answer.season_entries.keys()])
+    # for year in answer.season_data:
+    #     season = answer.season_data[year]
+    #     if season["poles"] >= n:
+    #         return True
+    # return False
 
 def numberSeasonPodiums(n:int, answer:MyDataClass) -> bool:
-    for year in answer.season_data:
-        season = answer.season_data[year]
-        if season["podiums"] >= n:
-            return True
-    return False
+    return any([len(answer.get_season_data(i)["podiums"]) >= n for i in answer.season_entries.keys()])
+    # for year in answer.season_data:
+    #     season = answer.season_data[year]
+    #     if season["podiums"] >= n:
+    #         return True
+    # return False
 
 def numberSeasonWins(n:int, answer:MyDataClass) -> bool:
-    for year in answer.season_data:
-        season = answer.season_data[year]
-        if season["wins"] >= n:
-            return True
-    return False
+    return any([len(answer.get_season_data(i)["wins"]) >= n for i in answer.season_entries.keys()])
+    # for year in answer.season_data:
+    #     season = answer.season_data[year]
+    #     if season["wins"] >= n:
+    #         return True
+    # return False
 
 def noChampionships(n:int, answer:MyDataClass) -> bool:
-    return answer.championships == 0
+    return answer.get_career_data()["n_championships"] == 0
 
 def noWins(n:int, answer:MyDataClass) -> bool:
-    return answer.wins == 0
+    return answer.get_career_data()["n_wins"] == 0
 
 def noPoles(n:int, answer:MyDataClass) -> bool:
-    return answer.poles == 0
+    return answer.get_career_data()["n_poles"] == 0
 
 def noSeasonPoints(n:int, answer:MyDataClass) -> bool:
-    return any(answer.season_data[year]["points"] == 0 for year in answer.season_data.keys()) 
+    return any([sumWithNone(answer.get_season_data(year)["points"]) == 0 for year in answer.season_data.keys()]) 
 
 def hasTeammate(teammatename:str, answer:MyDataClass) -> bool:
     return any(remove_accents(teammate.fullname) == remove_accents(teammatename) 
@@ -260,23 +264,23 @@ class Question():
 
 class DriverAchievmentQuestion(Question):
     questions1 = [ # Easy questions
-        (0, "Race wins", 5, numberWins, "wins"),
-        (1, "World championships", 1, numberChampionships, "championships"),
-        (2, "No world championships", "", noChampionships, "championships"),
-        (3, "Race entries", 20, numberEntries, "entries"),
-        (4, "Pole positions", 5, numberPoles, "poles"),
+        (0, "Race wins", 5, numberWins, "get_career_data", "n_wins"),
+        (1, "World championships", 1, numberChampionships, "get_career_data", "n_championships"),
+        (2, "No world championships", "", noChampionships, "get_career_data", "n_championships"),
+        (3, "Race entries", 20, numberEntries, "get_career_data", "n_entries"),
+        (4, "Pole positions", 5, numberPoles, "get_career_data", "n_poles"),
         ]
     questions2 = [ # Medium questions
-        (100, "Number of podiums in a season", 6, numberSeasonPodiums, "season_data", "wins"),
-        (101, "Number of points during career", 300, numberPoints, "career_points"),
-        (102, "Number of wins in a season", 3, numberSeasonWins, "season_data", "wins"),
-        (103, "Podiums", 10, numberPodiums, "season_data", "podiums"),
-        (104, "No wins", "", noWins)
+        (100, "Number of podiums in a season", 6, numberSeasonPodiums, "get_all_seasons_data", "n_wins"),
+        (101, "Number of points during career", 300, numberPoints, "get_career_data", "n_points"),
+        (102, "Number of wins in a season", 3, numberSeasonWins, "get_all_seasons_data", "n_wins"),
+        (103, "Podiums", 10, numberPodiums, "get_all_seasons_data", "n_podiums"),
+        (104, "No wins", "", noWins, "get_career_data", "n_wins")
     ]
     questions3 = [ # Hard questions
-        (201, "Sprint wins", 1, numberSprintWins, "sprint_wins"),
-        (201, "No points during any season", "", noSeasonPoints, "season_data", "points"),
-        (202, "No pole positions", "", noPoles, "season_data", "poles")
+        (201, "Sprint wins", 1, numberSprintWins, "get_career_data", "n_sprint_wins"),
+        (201, "Scored zero during any season", "", noSeasonPoints, "get_all_seasons_data", "n_points"),
+        (202, "No pole positions", "", noPoles, "get_career_data", "n_poles")
     ]
 
     def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:

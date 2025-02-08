@@ -2,6 +2,7 @@ from mydataclass import MyDataClass
 from driver import Driver
 from constructor import Constructor
 from race import Race
+from globals import sumWithNone
 
 SEASON_DATA_FIELDS = ["year","url"]
 
@@ -124,14 +125,46 @@ class Season(MyDataClass):
 
         """
         teammates = []
-        for race in self.races:
-            entrant = race.reverse_entrants(driver=driver)
-            teammate = race.teammates[entrant[1]]
-            for teammate in teammates:
+        entries = [x for x in self.races if driver in [ent[0] for ent in x.finish.get_order()]]
+        sprint_entries = [x for x in entries if (x.sprint_event and driver in [ent[0] for ent in x.sprint.get_order()])]
+        wins = [i for i in range(len(entries)) if driver == entries[i].get_winner()[0]]
+        podiums = [i for i in range(len(entries)) if driver in [ent[0] for ent in entries[i].get_podium()]]
+        poles = [i for i in range(len(entries)) if driver == entries[i].get_pole()[0]]
+        sprint_wins = [i for i in range(len(sprint_entries)) if driver == sprint_entries[i].get_sprint_winner()]
+        sprint_podiums = [i for i in range(len(sprint_entries)) if driver in [ent[0] for ent in sprint_entries[i].get_podium()]]
+        sprint_poles = [i for i in range(len(sprint_entries)) if driver == sprint_entries[i].get_sprint_pole()]
+        for race in entries:
+            try:
+                entrant = race.reverse_entrant(driver=driver)
+            except AssertionError:
+                continue
+            except Exception as e:
+                raise e
+            race_teammates = race.teammates[entrant[1]]
+            for teammate in race_teammates:
                 if not (teammate == driver or teammate in teammates):
                     teammates.append(teammate)
         return {
-            "teammates": teammates
+            "champion": self.champion == driver,
+            "entries": entries,
+            "n_entries": len(entries),
+            "teammates": teammates,
+            "wins": wins,
+            "n_wins": len(wins),
+            "podiums": podiums,
+            "n_podiums": len(podiums),
+            "poles": poles,
+            "n_poles": len(poles),
+            "points": self.get_points(driver),
+            "n_points": sumWithNone(self.get_points(driver)),
+            "sprint_entries": sprint_entries,
+            "n_sprint_entries": len(sprint_entries),
+            "sprint_wins": sprint_wins,
+            "n_sprint_wins": len(sprint_wins),
+            "sprint_podiums": sprint_podiums,
+            "n_sprint_podiums": len(sprint_podiums),
+            "sprint_poles": sprint_poles,
+            "n_sprint_poles": len(sprint_poles)
         }
 
     def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
@@ -381,6 +414,7 @@ class Season(MyDataClass):
             driver_points = race.calculate_driver_points(points_arr, points_arr_driver_sprint, fastest_lap_points)
             constructor_points = race.calculate_constructor_points(points_arr_constructor, fastest_lap_points)
             for entrant in driver_points.keys():
+                entrant.add_season_to_data(self)
                 if entrant in self.driver_full_standings.keys() and isinstance(self.driver_full_standings[entrant], list):
                     self.driver_full_standings[entrant].append(driver_points[entrant])
                 else:

@@ -12,7 +12,7 @@ from season import Season
 from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question
 from quizgame import QuizGame, DriverQuiz
 
-TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=False)
+TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
 
 def error_msg(attr:str, expected, got):
     """
@@ -212,6 +212,11 @@ class TestMyDataClasses(unittest.TestCase):
         self.assertTrue(str(res) == exp, error_msg("str method", exp, str(res)))
         self.assertTrue(len(res.entrants) == 1, error_msg("len method", 1, len(res.entrants)))
         self.assertTrue(len(res.data) == 1 and res.data[0] == status, "Incorrect status for Result object!")
+
+    def test_mapStrFunction(self):
+        wehrlein = TESTARCHIVE.drivers[835]
+        self.assertTrue(wehrlein.map_to_string("get_career_data", field2="n_points") == "6.0")
+        self.assertTrue(wehrlein.map_to_string("get_all_seasons_data", field2="n_entries") == "2016: 21, 2017: 18")
 
 
 class TestQuestions(unittest.TestCase):
