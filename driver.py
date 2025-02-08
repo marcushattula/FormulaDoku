@@ -55,7 +55,7 @@ class Driver(MyDataClass):
             Adds teammate to self.teammates if not already present.
         """
         assert isinstance(teammate, Driver), "Teammate must be of class Driver!"
-        if teammate not in self.teammates:
+        if teammate != self and teammate not in self.teammates:
             self.teammates.append(teammate)
 
     def add_race_to_data(self, race):#: Race):
@@ -101,9 +101,18 @@ class Driver(MyDataClass):
                 points: list[int]
         """
         season = self.season_entries[year]
+        races = season.races
+        driverstats = season.get_driver_stats(self)
         results = {
             "champion": season.champion[0] == self,
+            "entries": len([x for x in races if self in [ent[0] for ent in x.entrants]]),
+            "teammates": driverstats["teammates"],
+            "wins": None,
+            "podiums": None,
+            "poles": None,
+            "points": None
         }
+        return results
         # TODO: Finish implementing
     
     def get_carreer_data(self):

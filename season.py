@@ -123,8 +123,16 @@ class Season(MyDataClass):
             driverstats: dict; dictionary with the following key-value pairs:
 
         """
-        entrants = [entrant for entrant in self.driver_full_standings.keys() if entrant[0].fullname == driver.fullname]
-        # TODO: Finish implementing
+        teammates = []
+        for race in self.races:
+            entrant = race.reverse_entrants(driver=driver)
+            teammate = race.teammates[entrant[1]]
+            for teammate in teammates:
+                if not (teammate == driver or teammate in teammates):
+                    teammates.append(teammate)
+        return {
+            "teammates": teammates
+        }
 
     def select_race_points_system(self, drivers_champ:bool=True) -> list[int]: 
         """
@@ -325,6 +333,13 @@ class Season(MyDataClass):
                 if champion[1] == None or set1+set2 > champion[1]:
                     champion = (entrant, set1+set2)
             self.champion = champion[0]
+
+    def set_teammates(self):
+        for race in self.races:
+            for constructor in race.teammates.keys():
+                teammate_set = race.teammates[constructor]
+                for teammate in teammate_set:
+                    [teammate.add_teammate(x) for x in teammate_set]
 
     def award_points(self, pointssystem=None):
         """

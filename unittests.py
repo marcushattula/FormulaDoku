@@ -7,7 +7,7 @@ from mydataclass import MyDataClass, find_objects_by_field_value, find_single_ob
 from circuit import Circuit
 from constructor import Constructor
 from driver import Driver
-from race import Race
+from race import Race, Result, RACE_RESULT_DATA_FIELDS
 from season import Season
 from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question
 from quizgame import QuizGame, DriverQuiz
@@ -201,6 +201,17 @@ class TestMyDataClasses(unittest.TestCase):
         csv_data_line = ['2024', "https://github.com/marcushattula/FormulaDoku"]
         mySeason.read_data(csv_data_line)
         compare_attributes(self, mySeason, csv_data_line)
+
+    def test_ResultClass(self):
+        res = Result()
+        driver1 = TESTARCHIVE.drivers[0] # Lewis Hamilton
+        constructor1 = TESTARCHIVE.constructors[0] # McLaren
+        status = dict(zip(RACE_RESULT_DATA_FIELDS,[57,20,1,1,22,3,13,"13",13,0,56,"\\N","\\N",25,19,"1:35.520","203.969",11]))
+        res.add_entrant((driver1, constructor1),status)
+        exp = "Lewis Hamilton-McLaren"
+        self.assertTrue(str(res) == exp, error_msg("str method", exp, str(res)))
+        self.assertTrue(len(res.entrants) == 1, error_msg("len method", 1, len(res.entrants)))
+        self.assertTrue(len(res.data) == 1 and res.data[0] == status, "Incorrect status for Result object!")
 
 
 class TestQuestions(unittest.TestCase):

@@ -243,6 +243,7 @@ class Race(MyDataClass):
         self.points_per_driver = {}
         self.half_points = None # None if not half points awarded for this race, else is list of new points
         self._saved_points = {}
+        self.teammates = {}
         
     def __str__(self):
         """
@@ -288,6 +289,10 @@ class Race(MyDataClass):
         for i in range(4, len(RACE_RESULT_DATA_FIELDS)):
             results_dict[RACE_RESULT_DATA_FIELDS[i]] = results[i]
         self.entrants[driver_team_tuple] = results_dict
+        if constructor in self.teammates.keys() and driver not in self.teammates[constructor]:
+            self.teammates[constructor].append(driver)
+        else:
+            self.teammates[constructor] = [driver]
 
         # New implementation
         try:
@@ -335,6 +340,21 @@ class Race(MyDataClass):
             print(e)
             breakpoint()
             raise e
+
+    def reverse_entrants(self, driver=None, constructor=None):
+        if driver and constructor and isinstance(driver, Driver) and isinstance(constructor, Constructor):
+            return [x for x in self.entrants.keys() if x == (driver, constructor)]
+        elif driver and isinstance(driver, Driver):
+            return [x for x in self.entrants.keys() if x[0] == driver]
+        elif constructor and isinstance(constructor, Constructor):
+            return [x for x in self.entrants.keys() if x[1] == constructor]
+        else:
+            return self.entrants.keys()
+
+    def reverse_entrant(self, driver=None, constructor=None):
+        entrant = self.reverse_entrant(driver=driver, constructor=constructor)
+        assert len(entrant) == 1, "Found multiple entrants!"
+        return entrant[0]
 
     def get_grid(self) -> list[Driver]:
         """

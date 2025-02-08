@@ -273,6 +273,7 @@ class ArchiveReader():
         Reads self.seasons and adds appropriate data to different fields
         """
         for season in self.seasons:
+            season.set_teammates()
             season.award_points()
 
     def get_category(self, listname:str, categoryname:str) -> list:
