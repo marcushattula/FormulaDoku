@@ -293,8 +293,8 @@ class AnswerBox(QMainWindow):
 
     def top_row(self, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
         label1 = QLabel("Valid answer")
-        label2 = QLabel(str(question1))
-        label3 = QLabel(str(question2))
+        label2 = QLabel(str(question1.base))
+        label3 = QLabel(str(question2.base))
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)

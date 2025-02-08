@@ -62,14 +62,18 @@ class MyDataClass():
         Outputs:
             s: str; string of mapped fields
         """
+        if field1 == "":
+            return ""
         mappable = self.get_field(field1)
         if callable(mappable):
             mappable = mappable()
         if isinstance(mappable, list):
             if isinstance(field2, int):
                 return str(mappable[field2])
+            elif isinstance(field2, str) and all([hasattr(x, field2) for x in mappable]):
+                return ", ".join([x.get_field(field2) for x in mappable])
             else:
-                return ", ".join([x[field2] for x in mappable])
+                return ""
         elif isinstance(mappable, dict) and all([(isinstance(mappable[x], dict) and field2 in mappable[x]) for x in mappable.keys()]):
             return ", ".join([f"{str(x)}: {str(mappable[x][field2])}" for x in mappable.keys()])
         elif isinstance(mappable, dict) and field2 in mappable.keys():

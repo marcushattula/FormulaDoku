@@ -334,20 +334,22 @@ class DriverTeamQuestion(Question):
 
 class DriverSpecialQuestion(Question):
     questions1 = [
-        (0, "WILDCARD", "FREE SPACE", wildcard)
+        (0, "WILDCARD", "FREE SPACE", wildcard, "")
     ]
     questions2 = [
         (100, "Has had teammate", "Michael Schumacher", hasTeammate, "teammates"),
         (101, "Has had teammate", "Kimi Räikkönen", hasTeammate, "teammates"),
         (102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
     ]
-    questions3 = []
+    questions3 = [
+        (200, "Has had teammate",  "Sebastian Vettel", hasTeammate, "teammates")
+    ]
 
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
         self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
-def new_question(difficulty:int, questiontype:int, setseed=None, questionID:int=None) -> Question:
+def new_question(difficulty:int, questiontype:int=None, setseed=None, questionID:int=None) -> Question:
     """
     Create a new question
     Parameters:
@@ -360,8 +362,10 @@ def new_question(difficulty:int, questiontype:int, setseed=None, questionID:int=
     Outputs:
         question: Question; randomly selected question type.
     """
+    if questiontype == None:
+        questiontype = random.randint(1,4)
     assert isinstance(difficulty, int) and 1 <= difficulty <= 3, "Difficulty must be integer 1-3"
-    assert isinstance(questiontype, int) and 1 <= questiontype <= 4, "Questiontype must be integer 1-2"
+    assert isinstance(questiontype, int) and 1 <= questiontype <= 4, "Questiontype must be integer 1-4"
     if questiontype == 1:
         return DriverAchievmentQuestion(difficulty, setseed=setseed, questionID=questionID)
     elif questiontype == 2:
