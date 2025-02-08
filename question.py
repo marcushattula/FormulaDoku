@@ -100,6 +100,9 @@ def hasTeammate(teammatename:str, answer:MyDataClass) -> bool:
 def wildcard(_, answer:MyDataClass) -> bool:
     return True
 
+def wonRaceInYear(year:int, answer:MyDataClass) -> bool:
+    return (year in answer.get_all_seasons_data().keys() and answer.get_all_seasons_data()[year]["n_wins"] >= 1)
+
 class Question():
     """
     Parent class for inheritance of question methods.
@@ -342,7 +345,7 @@ class DriverSpecialQuestion(Question):
         (102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
     ]
     questions3 = [
-        (200, "Has had teammate",  "Sebastian Vettel", hasTeammate, "teammates")
+        (200, "Won a race in",  2012, wonRaceInYear, "get_all_seasons_data", "n_wins")
     ]
 
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:

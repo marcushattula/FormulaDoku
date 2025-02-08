@@ -138,7 +138,7 @@ class QuizGame():
         self.guesses = self.n_columns * self.n_rows
         while len(self.col_questions) < self.n_columns:
             n_col = len(self.col_questions)
-            question = new_question(min([self.difficulty, n_col+1]), setseed=self.seed)
+            question = new_question(min([self.difficulty, self.n_columns-n_col]), setseed=self.seed)
             self.seed = random.random()
             if question not in self.col_questions:
                 self.set_col_question(question)
@@ -147,7 +147,7 @@ class QuizGame():
             n_row = len(self.row_questions)
             valid_question = False
             while not valid_question:
-                question = new_question(min([self.difficulty, n_row+1]), setseed=self.seed)
+                question = new_question(min([self.difficulty, self.n_rows-n_row]), setseed=self.seed)
                 self.seed = random.random()
                 valid_question = True
                 for col_question in self.col_questions:
@@ -155,7 +155,7 @@ class QuizGame():
                         valid_question = False
                         i += 1
                         break
-            if i > self.n_columns*2:
+            if i > self.n_columns*10:
                 reset = True
                 break
             if question not in self.row_questions and question not in self.col_questions:
