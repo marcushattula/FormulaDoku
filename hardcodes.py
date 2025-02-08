@@ -156,7 +156,7 @@ def amend_missing_race_data(archive):#: ArchiveReader):
             if circuit.country == "usa":
                 circuit.country = "united states"
             elif circuit.country == "uk":
-                circuit.country == "united kingdom"
+                circuit.country = "united kingdom"
 
     add_missing_fastest_driver()
     fix_circuit_locations()
