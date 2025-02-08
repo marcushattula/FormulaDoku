@@ -30,4 +30,5 @@ class Constructor(MyDataClass):
             Adds data fields as attributes to this object.
         """
         self.read_csv_data(data)
+        self.country = self.cc.demonym_to_country(self.nationality.strip())
     

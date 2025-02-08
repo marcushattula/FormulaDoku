@@ -103,6 +103,15 @@ def wildcard(_, answer:MyDataClass) -> bool:
 def wonRaceInYear(year:int, answer:MyDataClass) -> bool:
     return (year in answer.get_all_seasons_data().keys() and answer.get_all_seasons_data()[year]["n_wins"] >= 1)
 
+def wonHomeRace(_, answer:MyDataClass) -> bool:
+    for season_year in answer.get_all_seasons_data().keys():
+        season_data = answer.get_all_seasons_data()[season_year]
+        for i_win in season_data["wins"]:
+            win_race = season_data["entries"][i_win]
+            if win_race.circuit.country == answer.country:
+                return True
+    return False
+
 class Question():
     """
     Parent class for inheritance of question methods.
@@ -345,7 +354,8 @@ class DriverSpecialQuestion(Question):
         (102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
     ]
     questions3 = [
-        (200, "Won a race in",  2012, wonRaceInYear, "get_all_seasons_data", "n_wins")
+        (200, "Won a race in",  2012, wonRaceInYear, "get_all_seasons_data", "n_wins"),
+        (201, "Won a race on home soil", "", wonHomeRace, "get_all_seasons_data", "wins")
     ]
 
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:

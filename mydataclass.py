@@ -5,6 +5,7 @@ class MyDataClass():
     """
     Parent class for inheritance by dataclasses.
     """
+    cc = CountryConverter()
 
     def __init__(self):
         """

@@ -1,11 +1,11 @@
 from globals import *
-from mydataclass import find_single_object_by_field_value
+from mydataclass import find_single_object_by_field_value, MyDataClass
 from driver import Driver
 from circuit import Circuit
 from constructor import Constructor
 from season import Season
 from race import Race
-from hardcodes import amend_missing_race_data
+from hardcodes import amend_missing_race_data, fix_demonym
 import shutil
 import csv
 
@@ -29,6 +29,7 @@ class ArchiveReader():
             self.db_path = self.init_db(archive_path=archive_path)
         else:
             self.db_path = TEMP_DIRPATH
+        fix_demonym(MyDataClass.cc)
         self.drivers = self.open_drivers()
         self.constructors = self.open_constructors()
         self.circuits = self.open_circuits()
@@ -268,6 +269,8 @@ class ArchiveReader():
         """
         for race in self.races:
             year = race.year
+            circuit = find_single_object_by_field_value(self.circuits, "circuitId", race.circuitId)
+            race.add_circuit(circuit)
             season:Season = find_single_object_by_field_value(self.seasons, "year", year)
             season.add_race(race)
     

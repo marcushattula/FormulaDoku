@@ -35,6 +35,7 @@ class Driver(MyDataClass):
         """
         self.read_csv_data(data)
         self.fullname = self.forename + " " + self.surname
+        self.country = self.cc.demonym_to_country(self.nationality.strip())
 
     def add_to_season_data(self, year:int, field:str, value:float):
         """

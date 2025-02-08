@@ -17,4 +17,5 @@ class Circuit(MyDataClass):
     
     def read_data(self, data:list[str]):
         self.read_csv_data(data)
+        self.country = self.country.lower()
 

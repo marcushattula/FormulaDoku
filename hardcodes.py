@@ -83,6 +83,14 @@ SHARED_DRIVES = {
     717: [(374, 373), (373, 374)]
 }
 
+def fix_demonym(cc: CountryConverter):
+    """
+    Fixes missing demonym-country pairs in CountryConverter
+    """
+    cc.demonyms["american-italian"] = "italy"
+    cc.demonyms["argentine-italian"] = "argentina"
+    cc.demonyms["east german"] = "germany"
+
 def amend_missing_race_data(archive):#: ArchiveReader):
     """
     Ammend missing data from races
@@ -143,6 +151,13 @@ def amend_missing_race_data(archive):#: ArchiveReader):
                 if race.raceId in SHARED_DRIVES:
                     pass
 
+    def fix_circuit_locations():
+        for circuit in archive.circuits:
+            if circuit.country == "usa":
+                circuit.country = "united states"
+            elif circuit.country == "uk":
+                circuit.country == "united kingdom"
 
     add_missing_fastest_driver()
+    fix_circuit_locations()
     half_points()

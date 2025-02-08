@@ -1,4 +1,5 @@
 import os
+from csv import reader
 from unicodedata import normalize
 
 PROJECT_NAME = "FormulaDoku"
@@ -11,6 +12,8 @@ TEMP_DIRPATH = os.path.join(HOMEDIR, TEMP_DIRNAME) # Extracted data archive dire
 
 ARCHIVE_FILE = os.path.join(HOMEDIR, "archive2.zip") # Path to archive file
 DEFAULT_PICTURE = os.path.join(HOMEDIR, "default.jpg")
+
+DEMONYM_CSV = os.path.join(HOMEDIR, "demonyms.csv")
 
 def remove_accents(input_str:str):
     """
@@ -48,3 +51,34 @@ def sumWithNone(num_list:list) -> float:
         sum: int; sum of num_list, with None mapped to 0
     """
     return sum([0 if x == None else x for x in num_list])
+
+class CountryConverter():
+
+    def __init__(self, demonym_csv_path=DEMONYM_CSV):
+        self.demonym_csv = demonym_csv_path
+        self.demonyms = {}
+        with open(self.demonym_csv, encoding="utf-8") as demonym_file:
+            r = reader(demonym_file)
+            for row in r:
+                self.demonyms[remove_accents(row[0].lower().strip())] = remove_accents(row[1].lower().strip())
+
+
+    def demonym_to_country(self, demonym:str) -> str:
+        """
+        Converts demonym to country of origin. E.g. "French" -> "France"
+        Parameters:
+            demonym: str; demonym to convert
+        Output:
+            country: str; country name
+        """
+        return self.demonyms[demonym.lower()]
+
+    def country_to_demonym(self, country:str) -> str:
+        """
+        Converts country to demonym. E.g. "France" -> "French"
+        Parameters:
+            country: str; country name to convert
+        Output:
+            demonym: str; demonym of country
+        """
+        raise NotImplementedError()

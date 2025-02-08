@@ -240,6 +240,7 @@ class Race(MyDataClass):
         self.half_points = None # None if not half points awarded for this race, else is list of new points
         self._saved_points = {}
         self.teammates = {}
+        self.circuit:Circuit = None
         
     def __str__(self):
         """
