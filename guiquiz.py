@@ -32,6 +32,7 @@ class MainWindow(QMainWindow):
         self.rows_box = QComboBox()
         self.rows_box.addItems("1,2,3,4,5".split(","))
         self.rows_box.setCurrentIndex(2)
+        self.rows_box
         layout.addWidget(self.rows_box)
 
         self.columns_box = QComboBox()
@@ -61,7 +62,10 @@ class MainWindow(QMainWindow):
         difficulty = int(self.difficulty_box.currentIndex()) + 1
         n_cols = int(self.columns_box.currentText())
         n_rows = int(self.rows_box.currentText())
-        self.quizwindow = DriverQuizWindow(self, difficulty, n_cols, n_rows)
+        constructor = QuizConstructor(ArchiveReader(archive_path=ARCHIVE_FILE), n_cols, n_rows, difficulty)
+        constructor.create_quiz()
+        driverquiz = constructor.start_quiz()
+        self.quizwindow = DriverQuizWindow(self, driverquiz)
         self.quizwindow.show()
 
 
@@ -73,17 +77,11 @@ class QuizWindow(QMainWindow):
 
         self.setFixedHeight(GUI_SCALE*200)
         self.setFixedWidth(GUI_SCALE*250)
-        self.quiz:QuizGame = None
 
-    def init2(self, difficulty:int, n_columns:int, n_rows:int):
         widget = QWidget()
         self.layout = QVBoxLayout()
 
         assert hasattr(self, "quiz") and isinstance(self.quiz, QuizGame), "Missing quiz field!"
-        self.quiz.set_difficulty(difficulty)
-        self.quiz.set_n_rows(n_rows)
-        self.quiz.set_n_columns(n_columns)
-        self.quiz.start_game()
 
         self.gridwidget = self.render_grid()
         self.layout.addWidget(self.gridwidget)
@@ -108,8 +106,8 @@ class QuizWindow(QMainWindow):
         grid = QWidget()
         grid_layout = QGridLayout()
         grid_layout.setSpacing(0)
-        for row in range(self.quiz.n_columns+1):
-            for col in range(self.quiz.n_rows+1):
+        for row in range(self.quiz.n_rows+1):
+            for col in range(self.quiz.n_columns+1):
                 if row == 0 and col == 0:
                     grid_widget = QLabel("FormulaDoku!")
                 elif row == 0:
@@ -181,10 +179,9 @@ class QuizWindow(QMainWindow):
 
 class DriverQuizWindow(QuizWindow):
 
-    def __init__(self, parent:MainWindow, difficulty:int, n_columns:int, n_rows:int):
+    def __init__(self, parent:MainWindow, driverquiz:DriverQuiz):#difficulty:int, n_columns:int, n_rows:int):
+        self.quiz = driverquiz
         super().__init__(parent)
-        self.quiz = DriverQuiz(ArchiveReader(archive_path=ARCHIVE_FILE))
-        self.init2(difficulty, n_columns, n_rows)
 
 
 class SearchBox(QMainWindow):

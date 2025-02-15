@@ -131,6 +131,7 @@ class Question():
         self.func = None
         self.map_field1 = None
         self.map_field2 = None
+        self._mutual_answers = {}
     
     def __str__(self) -> str:
         """
@@ -208,10 +209,7 @@ class Question():
         Outputs:
             correct: bool; True if correct, False if incorrect
         """
-        if hasattr(self, "__all_answers"):
-            return answer in self.__all_answers
-        else:
-            return self.func(self.modifier, answer)
+        return self.func(self.modifier, answer)
 
     def validate_question(self, otherQuestion, candidates:list[MyDataClass]) -> bool:
         """
@@ -222,6 +220,8 @@ class Question():
         Returns:
             valid: bool; boolean for if at least one valid answer exists for both questions. True = true
         """
+        if otherQuestion in self._mutual_answers:
+            return len(self.get_mutual_answers(otherQuestion,candidates)) > 0
         for candidate in candidates:
             ans1 = self.check_question(candidate)
             ans2 = otherQuestion.check_question(candidate)
@@ -237,14 +237,13 @@ class Question():
         Outputs:
             filtered_list: list[MyDataClass]; filtered list of candidates that are correct answers
         """
-        if hasattr(self, "_all_answers"):
-            return self._all_answers
-        else:
-            self._all_answers = []
-            for candidate in candidates:
-                if self.check_question(candidate):
-                    self._all_answers.append(candidate)
-            return self.get_all_answers(candidates)
+        if self in self._mutual_answers.keys():
+            return self._mutual_answers[self]
+        self._mutual_answers[self] = []
+        for candidate in candidates:
+            if self.check_question(candidate):
+                self._mutual_answers[self].append(candidate)
+        return self._mutual_answers[self]
     
     def get_mutual_answers(self, other_question, candidates:list[MyDataClass]) -> list[MyDataClass]:
         """
@@ -253,109 +252,108 @@ class Question():
             other_question: Question; the other question to be filtered for
             candidates: list[MyDataClass]; list of candidate answers
         Outputs:
-            Sets self._mutual_answers[other_question] to list of valid answers
-            Sets other_question._mutual_answers[self] to list of valid answers
             Returns list of valid answers
         """
-        if (hasattr(self, "_mutual_answers") and other_question in self._mutual_answers):
-            other_question._mutual_answers[self] = self._mutual_answers[other_question]
+        if other_question in self._mutual_answers.keys():
             return self._mutual_answers[other_question]
-        elif (hasattr(other_question, "_mutual_answers") and self in other_question._mutual_answers):
-            self._mutual_answers[other_question] = other_question._mutual_answers[self]
-            return other_question._mutual_answers[self]
-        else:
-            self._mutual_answers = {}
-            self._mutual_answers[other_question] = []
-            other_question._mutual_answers = {}
-            other_question._mutual_answers[self] = []
-            for candidate in candidates:
-                if self.check_question(candidate) and other_question.check_question(candidate):
-                    self._mutual_answers[other_question].append(candidate)
-                    other_question._mutual_answers[self].append(candidate)
-            return self._mutual_answers[other_question]
+        mutual_list = []
+        for candidate in candidates:
+            if self.check_question(candidate) and other_question.check_question(candidate):
+                mutual_list.append(candidate)
+        self._mutual_answers[other_question] = mutual_list
+        other_question._mutual_answers[self] = mutual_list
+        return self._mutual_answers[other_question]
 
-class DriverAchievmentQuestion(Question):
+class DriverQuestion(Question):
+    questions1 = [] # Easy questions
+    questions2 = [] # Medium questions
+    questions3 = [] # Hard questions
+
+    def __init__(self):
+        super().__init__()
+
+class DriverAchievmentQuestion(DriverQuestion):
     questions1 = [ # Easy questions
-        (0, "Race wins", 5, numberWins, "get_career_data", "n_wins"),
-        (1, "World championships", 1, numberChampionships, "get_career_data", "n_championships"),
-        (2, "No world championships", "", noChampionships, "get_career_data", "n_championships"),
-        (3, "Race entries", 20, numberEntries, "get_career_data", "n_entries"),
-        (4, "Pole positions", 5, numberPoles, "get_career_data", "n_poles"),
+        (1000, "Race wins", 5, numberWins, "get_career_data", "n_wins"),
+        (1001, "World championships", 1, numberChampionships, "get_career_data", "n_championships"),
+        (1002, "No world championships", "", noChampionships, "get_career_data", "n_championships"),
+        (1003, "Race entries", 20, numberEntries, "get_career_data", "n_entries"),
+        (1004, "Pole positions", 5, numberPoles, "get_career_data", "n_poles"),
         ]
     questions2 = [ # Medium questions
-        (100, "Number of podiums in a season", 6, numberSeasonPodiums, "get_all_seasons_data", "n_wins"),
-        (101, "Number of points during career", 300, numberPoints, "get_career_data", "n_points"),
-        (102, "Number of wins in a season", 3, numberSeasonWins, "get_all_seasons_data", "n_wins"),
-        (103, "Podiums", 10, numberPodiums, "get_all_seasons_data", "n_podiums"),
-        (104, "No wins", "", noWins, "get_career_data", "n_wins")
+        (1100, "Number of podiums in a season", 6, numberSeasonPodiums, "get_all_seasons_data", "n_wins"),
+        (1101, "Number of points during career", 300, numberPoints, "get_career_data", "n_points"),
+        (1102, "Number of wins in a season", 3, numberSeasonWins, "get_all_seasons_data", "n_wins"),
+        (1103, "Podiums", 10, numberPodiums, "get_all_seasons_data", "n_podiums"),
+        (1104, "No wins", "", noWins, "get_career_data", "n_wins")
     ]
     questions3 = [ # Hard questions
-        (201, "Sprint wins", 1, numberSprintWins, "get_career_data", "n_sprint_wins"),
-        (201, "Scored zero during any season", "", noSeasonPoints, "get_all_seasons_data", "n_points"),
-        (202, "No pole positions", "", noPoles, "get_career_data", "n_poles")
+        (1201, "Sprint wins", 1, numberSprintWins, "get_career_data", "n_sprint_wins"),
+        (1201, "Scored zero during any season", "", noSeasonPoints, "get_all_seasons_data", "n_points"),
+        (1202, "No pole positions", "", noPoles, "get_career_data", "n_poles")
     ]
 
     def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
         self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
-class DriverDataQuestion(Question):
+class DriverDataQuestion(DriverQuestion):
     questions1 = [ # Easy questions
-        (0, "Driver nationality", "German", driverNationality, "nationality"),
-        (1, "Driver nationality", "British", driverNationality, "nationality"),
-        (2, "Driver nationality", "Italian", driverNationality, "nationality"),
-        (3, "Driver nationality", "French", driverNationality, "nationality"),
-        (4, "Driver nationality", "Brazilian", driverNationality, "nationality")
+        (2000, "Driver nationality", "German", driverNationality, "nationality"),
+        (2001, "Driver nationality", "British", driverNationality, "nationality"),
+        (2002, "Driver nationality", "Italian", driverNationality, "nationality"),
+        (2003, "Driver nationality", "French", driverNationality, "nationality"),
+        (2004, "Driver nationality", "Brazilian", driverNationality, "nationality")
     ]
     questions2 = [ # Medium questions
-        (100, "Driver nationality", "American", driverNationality, "nationality"),
-        (101, "Driver nationality", "Australian", driverNationality, "nationality"),
-        (102, "Driver nationality", "Spanish", driverNationality, "nationality"),
+        (2100, "Driver nationality", "American", driverNationality, "nationality"),
+        (2101, "Driver nationality", "Australian", driverNationality, "nationality"),
+        (2102, "Driver nationality", "Spanish", driverNationality, "nationality"),
     ]
     questions3 = [ # Hard questions
-        (200, "Driver nationality", "Japanese", driverNationality, "nationality"),
-        (201, "Driver nationality", "Canadian", driverNationality, "nationality"),
-        (202, "Driver nationality", "Finnish", driverNationality, "nationality"),
+        (2200, "Driver nationality", "Japanese", driverNationality, "nationality"),
+        (2201, "Driver nationality", "Canadian", driverNationality, "nationality"),
+        (2202, "Driver nationality", "Finnish", driverNationality, "nationality"),
     ]
 
     def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
         self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
-class DriverTeamQuestion(Question):
+class DriverTeamQuestion(DriverQuestion):
     questions1 = [ # Easy questions
-        (0, "Driven for team", "Williams", driverTeam, "teams", "name"),
-        (1, "Driven for team", "McLaren", driverTeam, "teams", "name"),
-        (2, "Driven for team", "Ferrari", driverTeam, "teams", "name"),
-        (3, "Driven for team", "Team Lotus", driverTeam, "teams", "name")
+        (3000, "Driven for team", "Williams", driverTeam, "teams", "name"),
+        (3001, "Driven for team", "McLaren", driverTeam, "teams", "name"),
+        (3002, "Driven for team", "Ferrari", driverTeam, "teams", "name"),
+        (3003, "Driven for team", "Team Lotus", driverTeam, "teams", "name")
     ]
     questions2 = [ # Medium questions
-        (100, "Driven for team", "Mercedes", driverTeam, "teams", "name"),
-        (101, "Driven for team", "Red Bull", driverTeam, "teams", "name"),
-        (102, "Driven for team", "Renault", driverTeam, "teams", "name")
+        (3100, "Driven for team", "Mercedes", driverTeam, "teams", "name"),
+        (3101, "Driven for team", "Red Bull", driverTeam, "teams", "name"),
+        (3102, "Driven for team", "Renault", driverTeam, "teams", "name")
     ]
     questions3 = [ # Hard questions
-        (200, "Driven for team", "Sauber", driverTeam, "teams", "name"),
-        (201, "Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
-        (202, "Driven for team", "Jordan", driverTeam, "teams", "name")
+        (3200, "Driven for team", "Sauber", driverTeam, "teams", "name"),
+        (3201, "Driven for team", "Toro Rosso", driverTeam, "teams", "name"),
+        (3202, "Driven for team", "Jordan", driverTeam, "teams", "name")
     ]
 
     def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
         self.choose_question(difficulty, setseed=setseed, questionID=questionID)
 
-class DriverSpecialQuestion(Question):
+class DriverSpecialQuestion(DriverQuestion):
     questions1 = [
-        (0, "WILDCARD", "FREE SPACE", wildcard, "")
+        (4000, "WILDCARD", "FREE SPACE", wildcard, "")
     ]
     questions2 = [
-        (100, "Has had teammate", "Michael Schumacher", hasTeammate, "teammates"),
-        (101, "Has had teammate", "Kimi Räikkönen", hasTeammate, "teammates"),
-        (102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
+        (4100, "Has had teammate", "Michael Schumacher", hasTeammate, "teammates"),
+        (4101, "Has had teammate", "Kimi Räikkönen", hasTeammate, "teammates"),
+        (4102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
     ]
     questions3 = [
-        (200, "Won a race in",  2012, wonRaceInYear, "get_all_seasons_data", "n_wins"),
-        (201, "Won a race on home soil", "", wonHomeRace, "get_all_seasons_data", "wins")
+        (4200, "Won a race in",  2012, wonRaceInYear, "get_all_seasons_data", "n_wins"),
+        (4201, "Won a race on home soil", "", wonHomeRace, "get_all_seasons_data", "wins")
     ]
 
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:
@@ -388,3 +386,24 @@ def new_question(difficulty:int, questiontype:int=None, setseed=None, questionID
     elif questiontype == 4:
         return DriverSpecialQuestion(difficulty, setseed=setseed, questionID=questionID)
 
+def all_questions(quiz_category:int):# -> [Question]:
+    """
+    Returns a list with all questions for quiz category
+    Parameters:
+        None
+    Returns:
+        questions: [Question]; list containing all created questions
+    """
+    if quiz_category == 0:
+        questionClass = DriverQuestion
+    else:
+        raise NotImplementedError("Other question classes not implemented!")
+    questions = []
+    for questiontype in questionClass.__subclasses__():
+        for question_difficulty in ["1", "2", "3"]:
+            question_tuple_list = getattr(questiontype, "questions" + question_difficulty)
+            for question_tuple in question_tuple_list:
+                question_id = question_tuple[0]
+                question = questiontype(question_difficulty, questionID=question_id)
+                questions.append(question)
+    return questions

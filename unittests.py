@@ -9,10 +9,10 @@ from constructor import Constructor
 from driver import Driver
 from race import Race, Result, RACE_RESULT_DATA_FIELDS
 from season import Season
-from question import DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question
-from quizgame import QuizGame, DriverQuiz
+from question import Question, DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question, all_questions
+from quizgame import QuizGame, DriverQuiz, QuizConstructor
 
-TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=False)
+TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
 
 def error_msg(attr:str, expected, got):
     """
@@ -233,22 +233,28 @@ class TestQuestions(unittest.TestCase):
     """
 
     def test_QuestionClass(self):
-        question1 = new_question(1, questiontype=1, questionID=1) # World championships: 1
+        question1 = new_question(1, questiontype=1, questionID=1001) # World championships: 1
         self.assertTrue(str(question1) == 'World championships: 1')
     
     def test_GetAnswers(self):
-        question1 = new_question(1, 2, questionID=0) # Driver nationality: German
+        question1 = new_question(1, 2, questionID=2000) # Driver nationality: German
         answers = question1.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(answers) == 50, f"Incorrect number of answers! Expected 50, got {len(answers)}!")
         for driver in answers:
             self.assertTrue(driver.nationality == "German", f"Incorrect nationality! Expected German, got {driver.nationality}!")
 
     def test_GetMutualAnswers(self):
-        question1 = new_question(1, 2, questionID=202) # Drier nationality: Finnish
-        question2 = new_question(1, 1, questionID=0) # Race wins: 5
+        question1 = new_question(1, 2, questionID=2202) # Drier nationality: Finnish
+        question2 = new_question(1, 1, questionID=1000) # Race wins: 5
         mutual_answers = question1.get_mutual_answers(question2, TESTARCHIVE.drivers) # Valtteri, Kimi, Mika, Keke
         self.assertTrue(len(mutual_answers) == 4, error_msg("number of mutual answers", 4, len(mutual_answers)))
 
+    def test_GetAllQuestions(self):
+        questions = all_questions(0)
+        question1 = new_question(1, questiontype=1, questionID=1001) # World championships: 1
+        self.assertTrue(len(questions) > 30, "Found fewer questions than expected!")
+        self.assertTrue(question1 in questions, "Expected question missing from all questions!")
+        
 
 class TestQuizClass(unittest.TestCase):
     """
@@ -260,34 +266,18 @@ class TestQuizClass(unittest.TestCase):
         self.assertTrue(testquiz.n_columns == 3, error_msg("n_columns", 3, testquiz.n_columns))
         self.assertTrue(testquiz.n_rows == 3, error_msg("n_rows", 3, testquiz.n_rows))
         self.assertTrue(testquiz.guesses == 9, error_msg("guesses", 9, testquiz.guesses))
-        self.assertTrue(testquiz.difficulty == 1, error_msg("difficulty", 1, testquiz.difficulty))
-    
-    # def test_DriverEasyQuiz(self):
-    #     driverquiz = DriverQuiz(TESTARCHIVE, setseed=1)
-    #     driverquiz.start_game()
-    #     col_questions = ["World championships: 1", "Race wins: 5", "Race entries: 20"]
-    #     row_questions = ["Driver nationality: French", "Driver nationality: British", "Driver nationality: German"]
-    #     self.assertTrue(len(driverquiz.col_questions) == len(col_questions), f"Mismatching number of col questions")
-    #     self.assertTrue(len(driverquiz.row_questions) == len(row_questions), f"Mismatching number of row questions")
-    #     for i in range(len(col_questions)):
-    #         i_ref = col_questions[i]
-    #         i_quiz = driverquiz.col_questions[i]
-    #         self.assertTrue(str(i_quiz) == i_ref, f"Mismatching column question {i}")
-    #     for i in range(len(row_questions)):
-    #         i_ref = row_questions[i]
-    #         i_quiz = driverquiz.row_questions[i]
-    #         self.assertTrue(str(i_quiz) == i_ref, f"Mismatching row question {i}")
+        self.assertTrue(testquiz.difficulty == 3, error_msg("difficulty", 3, testquiz.difficulty))
     
     def test_DriverQuizFalseValidation(self):
         driverQuiz = DriverQuiz(TESTARCHIVE)
         driverQuiz.set_n_columns(2)
         driverQuiz.set_n_rows(1)
-        question1 = new_question(1, 2, questionID=0) # Driver nationality: German
-        question2 = new_question(2, 3, questionID=101) # Driven for team: Red Bull
-        question3 = new_question(3, 3, questionID=201) # Driven for team: Toro Rosso
-        driverQuiz.set_row_question(question1)
-        driverQuiz.set_col_question(question2)
-        driverQuiz.set_col_question(question3)
+        question1 = new_question(1, 2, questionID=2000) # Driver nationality: German
+        question2 = new_question(2, 3, questionID=3101) # Driven for team: Red Bull
+        question3 = new_question(3, 3, questionID=3201) # Driven for team: Toro Rosso
+        driverQuiz.set_row_question(0, question1)
+        driverQuiz.set_col_question(0, question2)
+        driverQuiz.set_col_question(1, question3)
         # This quiz is unsolveable, since only Vettel is a valid answer for both cells
         self.assertFalse(driverQuiz.full_validation())
     
@@ -299,10 +289,10 @@ class TestQuizClass(unittest.TestCase):
         question2 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
         question3 = DriverAchievmentQuestion(1, setseed=1) # World championships: 1
         question4 = DriverTeamQuestion(1, setseed=5) # Driven for team: Ferrari
-        driverQuiz.set_row_question(question1)
-        driverQuiz.set_row_question(question2)
-        driverQuiz.set_col_question(question3)
-        driverQuiz.set_col_question(question4)
+        driverQuiz.set_row_question(0, question1)
+        driverQuiz.set_row_question(1, question2)
+        driverQuiz.set_col_question(0, question3)
+        driverQuiz.set_col_question(1, question4)
         self.assertTrue(driverQuiz.full_validation())
         valid_answers = {
             (0, 0): TESTARCHIVE.drivers[2],
@@ -320,14 +310,42 @@ class TestQuizClass(unittest.TestCase):
         question2 = DriverDataQuestion(3, setseed=654) # Drier nationality: Finnish
         question3 = DriverDataQuestion(2, setseed=9) # Driver nationality: Australian
         question4 = DriverAchievmentQuestion(1, setseed=1) # World championships: 1
-        driverQuiz.set_row_question(question1)
-        driverQuiz.set_row_question(question2)
-        driverQuiz.set_row_question(question3)
-        driverQuiz.set_col_question(question4)
-        driverQuiz.set_col_question(question4)
-        driverQuiz.set_col_question(question4)
+        driverQuiz.set_row_question(0, question1)
+        driverQuiz.set_row_question(1, question2)
+        driverQuiz.set_row_question(2, question3)
+        driverQuiz.set_col_question(0, question4)
+        driverQuiz.set_col_question(1, question4)
+        driverQuiz.set_col_question(2, question4)
         # This quiz is unsolveable, since there are only two Australian champions
         self.assertFalse(driverQuiz.full_validation())
+
+
+class TestQuizConstructorClass(unittest.TestCase):
+
+    def test_ConstructorInit(self):
+        qc = QuizConstructor(TESTARCHIVE)
+        self.assertIsNone(qc.all_questions, "Constructor all_questions attribute should not be initialized yet!")
+        self.assertIsNone(qc.quiz, "Constructor quiz attribute should not be initialized yet!")
+        qc.create_quiz()
+        self.assertTrue(all([isinstance(q, Question) for q in qc.all_questions]) and len(qc.all_questions) > 30
+                        , "Found fewer questions than expected!")
+        self.assertTrue(isinstance(qc.quiz, DriverQuiz), "Constructor quiz attribute should be of type DriverQuiz!")
+        qg = qc.start_quiz()
+        self.assertTrue(isinstance(qg, DriverQuiz), "Should have initiated driver quiz!")
+    
+    def test_SeededQuiz(self):
+        qc = QuizConstructor(TESTARCHIVE, seed=7)
+        qc.create_quiz()
+        qg = qc.start_quiz()
+        exp_col_q = ["Driver nationality: Canadian", "No wins", "Driver nationality: German"]
+        exp_row_q = ["No pole positions", "Podiums: 10", "Pole positions: 5"]
+        self.assertTrue(len(qg.col_questions) == 3, error_msg("col_questions", 3, len(qg.col_questions)))
+        self.assertTrue(len(qg.row_questions) == 3, error_msg("row_questions", 3, len(qg.row_questions)))
+        for i in range(3):
+            got_col_q = qg.col_questions[i]
+            self.assertTrue(str(got_col_q) == exp_col_q[i], f"Mismatching column question at index {i}!")
+            got_row_q = qg.row_questions[i]
+            self.assertTrue(str(got_row_q) == exp_row_q[i], f"Mismatching row question at index {i}!")
 
 
 if __name__ == '__main__':

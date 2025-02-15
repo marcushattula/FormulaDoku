@@ -4,7 +4,9 @@ from readArchive import ArchiveReader
 from mydataclass import MyDataClass, find_single_object_by_field_value
 from driver import Driver
 from globals import *
-from question import Question, new_question
+from question import Question, new_question, all_questions
+
+RECURSION_LIMIT = 100
 
 class QuizGame():
     """
@@ -13,23 +15,21 @@ class QuizGame():
     colnames = ['A','B','C','D','E'] # Columns are labeled letters A-E
     rownames = ['1','2','3','4','5'] # Rows are labeled numbers 1-5
 
-    def __init__(self, archive:ArchiveReader, setseed=None):
+    def __init__(self, archive:ArchiveReader, setseed=None, n_columns:int=3, n_rows:int=3, difficulty=3):
         """
         Initialize game with default settings. Default is three rows and three columns, easy difficulty.
         """
         self.validation_list: list[MyDataClass] = [] # List of objects to validate against, overridden during inheritance.
         self.solved_cells = [] # List of solved cells, tuple (col, row)
         self.given_answers = {} # List of given correct answers, same answer cannot be used multiple times
-        self.n_columns = 3 # Number of columns
-        self.n_rows = 3 # Number of rows
-        self.difficulty = 1 # 1 = Easy, 2 = Medium, 3 = Hard
+        self.difficulty = difficulty # 1 = Easy, 2 = Medium, 3 = Hard
         self.forfeit = False # Flag if player has forfeited game
         self.archive = archive # ArchiveReader class, containing result data
-        self.guesses = self.n_columns * self.n_rows # Number of guesses
-        self.col_questions: list[Question] = [] # List of column questions
-        self.row_questions: list[Question] = [] # List of row questions
         self.possible_answers = {} # List of possible answers to this quiz
         self.seed = setseed # Seed for generating "random" quiz questions
+        self.set_n_columns(n_columns)
+        self.set_n_rows(n_rows)
+        self.guesses = self.n_columns * self.n_rows # Number of guesses
 
     def solved(self) -> bool:
         """
@@ -63,6 +63,7 @@ class QuizGame():
         assert isinstance(n, int), "Number of columns must be integer!"
         assert 1 <= n <= 5, "Number of columns must be 1-5!"
         self.n_columns = n
+        self.col_questions = [None for _ in range(n)]
     
     def set_n_rows(self, n:int) -> None:
         """
@@ -76,6 +77,7 @@ class QuizGame():
         assert isinstance(n, int), "Number of rows must be integer!"
         assert 1 <= n <= 5, "Number of rows must be 1-5!"
         self.n_rows = n
+        self.row_questions = [None for _ in range(n)]
     
     def set_difficulty(self, difficulty:int) -> None:
         """
@@ -101,7 +103,7 @@ class QuizGame():
         assert isinstance(guesses, int) and guesses > 0, "Number of guesses must be positive integer."
         self.guesses = guesses
 
-    def set_col_question(self, question:Question) -> None:
+    def set_col_question(self, i:int, question:Question) -> None:
         """
         Add a question to col questions
         Parameters:
@@ -111,9 +113,10 @@ class QuizGame():
             Adds the question to self.col_questions
         """
         assert isinstance(question, Question), f"Added question must be Question object"
-        self.col_questions.append(question)
+        assert isinstance(i, int) and 0 <= i < self.n_columns, f"Index must be in range of number of columns!"
+        self.col_questions[i] = question
 
-    def set_row_question(self, question:Question) -> None:
+    def set_row_question(self, i:int, question:Question) -> None:
         """
         Add a question to row questions
         Parameters:
@@ -123,7 +126,8 @@ class QuizGame():
             Adds the question to self.row_questions
         """
         assert isinstance(question, Question), f"Added question must be Question object"
-        self.row_questions.append(question)
+        assert isinstance(i, int) and 0 <= i < self.n_rows, f"Index must be in range of number of columns!"
+        self.row_questions[i] = question
 
     def start_game(self) -> None:
         """
@@ -134,6 +138,7 @@ class QuizGame():
             Adds questions to self.col_questions and self.row_questions
             Returns None
         """
+        raise DeprecationWarning("This function should no longer be used. Please use quizconstructor to generate quizzes.")
         reset = False
         self.guesses = self.n_columns * self.n_rows
         while len(self.col_questions) < self.n_columns:
@@ -502,6 +507,182 @@ class RaceQuiz(QuizGame):
         pass
 
 
+class QuizConstructor():
+
+    def __init__(self, archive:ArchiveReader, n_cols:int=3, n_rows:int=3, 
+            difficulty:int=3, quiztype:int=0, guesses:int=0, seed=None):
+        random.seed(seed)
+        self.archive = archive
+        self.set_n_cols(n_cols)
+        self.set_n_rows(n_rows)
+        self.set_difficulty(difficulty)
+        self.set_quiztype(quiztype)
+        self.set_n_guesses(guesses)
+        self.all_questions:list[Question] = None
+        self.quiz:QuizGame = None
+    
+    def validate_all(self):
+        for question in self.all_questions:
+            for other_question in self.all_questions:
+                question.get_mutual_answers(other_question, self.archive.drivers)
+        
+    def set_n_cols(self, n_cols:int):
+        assert isinstance(n_cols, int) and n_cols > 0, f"Number of columns must be positive integer! Currently {n_cols}"
+        self.n_cols = n_cols
+        self.col_question_id_set = [-1 for _ in range(n_cols)]
+    
+    def set_n_rows(self, n_rows:int):
+        assert isinstance(n_rows, int) and n_rows > 0, f"Number of rows must be positive integer! Currently {n_rows}"
+        self.n_rows = n_rows
+        self.row_question_id_set = [-1 for _ in range(n_rows)]
+    
+    def set_difficulty(self, difficulty:int):
+        assert isinstance(difficulty, int) and difficulty > 0, f"Difficulty must be positive integer! Currently {difficulty}"
+        self.difficulty = difficulty
+    
+    def set_quiztype(self, quiztype:int):
+        assert isinstance(quiztype, int) and quiztype in [0], f"Quiztype must be integer corresponding to type! Currently {quiztype}"
+        self.quiztype = quiztype
+    
+    def set_n_guesses(self, guesses:int):
+        assert isinstance(guesses, int) and guesses >= 0, f"Number of guesses must be non-negative integer! Currently {guesses}"
+        self.guesses = guesses
+    
+    def select_question(self, id:int) -> Question:
+        assert isinstance(id, int) and id < len(self.all_questions), f"Question index must be integer less than number of questions! Currently {id}"
+        return self.all_questions[id]
+    
+    def random_question(self) -> Question:
+        return random.choice(self.all_questions)
+
+    def set_col_question_id(self, ids):
+        assert all([x == None or isinstance(x, int) for x in ids]), "Ids must be None or integers!"
+        self.col_question_id_set = ids
+    
+    def set_row_question_id(self, ids):
+        assert all([x == None or isinstance(x, int) for x in ids]), "Ids must be None or integers!"
+        self.row_question_id_set = ids
+
+    def update_col_questions(self):
+        """
+        
+        """
+        assert len(self.col_question_id_set) == self.n_cols, f"Array length must match number of columns! ({len(self.col_question_id_set)} != {self.n_cols})"
+        new_id_set = []
+        for i in range(self.n_cols):
+            i_question_id = self.col_question_id_set[i]
+            if i_question_id == None:
+                i_question = self.random_question()
+                i_question_id = i_question.question_id
+            else:
+                assert isinstance(i_question_id, int), f"Question ID must be integer!"
+                i_question = self.select_question(i_question_id)
+            new_id_set.append(i_question_id)
+            self.quiz.set_col_question(i, i_question)
+        return new_id_set
+    
+    def update_row_questions(self):
+        """
+        
+        """
+        assert len(self.row_question_id_set) == self.n_rows, f"Array length must match number of rows! ({len(self.row_question_id_set)} != {self.n_rows})"
+        new_id_set = []
+        for i in range(self.n_rows):
+            i_question_id = self.row_question_id_set[i]
+            if i_question_id == None:
+                i_question = self.random_question()
+                i_question_id = i_question.question_id
+            else:
+                assert isinstance(i_question_id, int), f"Question ID must be integer!"
+                i_question = self.select_question(i_question_id)
+            new_id_set.append(i_question_id)
+            self.quiz.set_row_question(i, i_question)
+        return new_id_set
+
+    def update_questions(self):
+        """
+        
+        """
+        new_questions_set = ([], [])
+        for i in range(max(self.n_cols, self.n_rows)):
+            if i < self.n_cols:
+                i_col_question_id = self.col_question_id_set[i]
+                while True:
+                    if i_col_question_id == None:
+                        i_col_question = self.random_question()
+                    elif isinstance(i_col_question_id, int) and i_col_question_id < 0:
+                        temp_seed = random.random()
+                        i_col_question = new_question(max(min(self.n_cols-i, 3), 1), setseed=temp_seed)
+                    else:
+                        i_col_question = self.select_question(i_col_question_id)
+                    temp_id = i_col_question.question_id
+                    if ((isinstance(i_col_question_id, int) and i_col_question_id >= 0) or # If pre-determined question or...
+                        ((i_col_question_id == None or i_col_question_id < 0) and # (if (random or default_logic question) and...
+                        not (any(temp_id == x.question_id for x in new_questions_set[0]) or 
+                        any(temp_id == x.question_id for x in new_questions_set[1])))): # not question already picked, then...
+                        new_questions_set[0].append(i_col_question)# Append question to set of columns
+                        break
+            if i < self.n_rows:
+                i_row_question_id = self.row_question_id_set[i]
+                while True:
+                    if i_row_question_id == None:
+                        i_row_question = self.random_question()
+                    elif isinstance(i_row_question_id, int) and i_row_question_id < 0:
+                        temp_seed = random.random()
+                        i_row_question = new_question(max(min(self.n_rows-i, 3), 1), setseed=temp_seed)
+                    else:
+                        i_row_question = self.select_question(i_row_question_id)
+                    temp_id = i_row_question.question_id
+                    if ((isinstance(i_row_question_id, int) and i_row_question_id >= 0) or # If pre-determined question or...
+                        ((i_row_question_id == None or i_row_question_id < 0) and # (if (random or default_logic question) and...
+                        not (any(temp_id == x.question_id for x in new_questions_set[0]) or 
+                        any(temp_id == x.question_id for x in new_questions_set[1])))): # not question already picked, then...
+                        new_questions_set[1].append(i_row_question) # Append question to set of rows
+                        break
+        for i in range(self.n_cols):
+            self.quiz.set_col_question(i, new_questions_set[0][i])
+        for i in range(self.n_rows):
+            self.quiz.set_row_question(i, new_questions_set[1][i])
+        return new_questions_set
+        #return (col_q, row_q)
+
+    def create_quiz(self):
+        """
+        
+        """
+        if self.quiztype == 0:
+            self.quiz = DriverQuiz(self.archive)
+        else:
+            raise NotImplementedError("Other quizclasses not implemented yet!")
+        self.quiz.set_n_columns(self.n_cols)
+        self.quiz.set_n_rows(self.n_rows)
+        self.quiz.set_difficulty(self.difficulty)
+        self.all_questions = all_questions(self.quiztype)
+        self.validate_all()
+    
+    def start_quiz(self, force:bool=False) -> QuizGame:
+        """
+        
+        """
+        if force:
+            self.update_questions()
+            return self.quiz
+        validated = False
+        incompatible_sets = []
+        i = 0
+        while not validated:
+            new_question_set = self.update_questions()
+            i += 1
+            if i > RECURSION_LIMIT:
+                raise RecursionError("Unable to find compatible set! Please change questions.")
+            elif new_question_set in incompatible_sets:
+                continue
+            validated = self.quiz.full_validation()
+            if not validated:
+                incompatible_sets.append(new_question_set)
+        return self.quiz
+
+
 def play_driver_game(cols:int=3, rows:int=3, difficulty:int=3, guesses:int=9):
     """
     Play driver quiz. This method is used for debugging.
@@ -514,7 +695,10 @@ def play_driver_game(cols:int=3, rows:int=3, difficulty:int=3, guesses:int=9):
     new_quiz.start_game()
     new_quiz.play_game()
 
-
-
 if __name__ == "__main__":
-    play_driver_game()
+    archive = ArchiveReader(archive_path=ARCHIVE_FILE)
+    qc = QuizConstructor(archive, n_cols=3, n_rows=3, seed=7)
+    qc.create_quiz()
+    qg = qc.start_quiz()
+    breakpoint()
+    #play_driver_game()
