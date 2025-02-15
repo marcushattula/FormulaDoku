@@ -1,5 +1,5 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QDialog, QDialogButtonBox
 from PyQt6 import QtCore
 
 from quizgame import *
@@ -18,6 +18,8 @@ class MainWindow(QMainWindow):
         self.setFixedHeight(GUI_SCALE*200)
         self.setFixedWidth(GUI_SCALE*200)
 
+        self.archive = ArchiveReader(archive_path=ARCHIVE_FILE)
+
         widget = QWidget()
         layout = QVBoxLayout()
 
@@ -27,6 +29,7 @@ class MainWindow(QMainWindow):
 
         self.difficulty_box = QComboBox()
         self.difficulty_box.addItems(["Easy","Medium","Hard"])
+        self.difficulty_box.setCurrentIndex(2)
         layout.addWidget(self.difficulty_box)
 
         self.rows_box = QComboBox()
@@ -43,6 +46,10 @@ class MainWindow(QMainWindow):
         start_button = QPushButton("Start")
         start_button.clicked.connect(self.start_game)
         layout.addWidget(start_button)
+
+        custom_game_button = QPushButton("Custom Game")
+        custom_game_button.clicked.connect(self.custom_game)
+        layout.addWidget(custom_game_button)
 
         exit_button = new_exit_button()
         layout.addWidget(exit_button)
@@ -62,18 +69,145 @@ class MainWindow(QMainWindow):
         difficulty = int(self.difficulty_box.currentIndex()) + 1
         n_cols = int(self.columns_box.currentText())
         n_rows = int(self.rows_box.currentText())
-        constructor = QuizConstructor(ArchiveReader(archive_path=ARCHIVE_FILE), n_cols, n_rows, difficulty)
+        constructor = QuizConstructor(self.archive, n_cols, n_rows, difficulty)
+        constructor.set_quiztype(int(self.quiztype_box.currentIndex()))
         constructor.create_quiz()
-        driverquiz = constructor.start_quiz()
-        self.quizwindow = DriverQuizWindow(self, driverquiz)
+        quiz = constructor.start_quiz()
+        self.quizwindow = QuizWindow(self, quiz)
         self.quizwindow.show()
+    
+    def custom_game(self):
+        """
+        
+        """
+        difficulty = int(self.difficulty_box.currentIndex()) + 1
+        n_cols = int(self.columns_box.currentText())
+        n_rows = int(self.rows_box.currentText())
+        constructor = QuizConstructor(self.archive, n_cols, n_rows, difficulty)
+        constructor.set_quiztype(int(self.quiztype_box.currentIndex()))
+        constructor.create_quiz()
+        self.constructorwindow = CreatorWindow(self, constructor)
+        self.constructorwindow.show()
+
+
+class CreatorWindow(QMainWindow):
+
+    def __init__(self, parent:MainWindow, constructor:QuizConstructor):
+        super().__init__(parent)
+        self.parent = parent
+        self.constructor = constructor
+
+        self.setFixedHeight(GUI_SCALE*200)
+        self.setFixedWidth(GUI_SCALE*250)
+        widget = QWidget()
+        layout = QVBoxLayout()
+
+        self.grid_widget = self.render_grid()
+        layout.addWidget(self.grid_widget)
+
+        self.bottomrow = self.bottom_row()
+        layout.addWidget(self.bottomrow)
+
+        widget.setLayout(layout)
+        self.setCentralWidget(widget)
+    
+    def bottom_row(self) -> QWidget:
+        widget = QWidget()
+        layout = QHBoxLayout()
+
+        give_up_button = QPushButton("Start")
+        give_up_button.clicked.connect(self.start_button_clicked)
+        layout.addWidget(give_up_button)
+
+        close_button = QPushButton("Cancel")
+        close_button.clicked.connect(self.exit_window)
+        layout.addWidget(close_button)
+
+        exit_button = new_exit_button()
+        layout.addWidget(exit_button)
+
+        widget.setLayout(layout)
+        return widget
+    
+    def start_button_clicked(self):
+
+        def reverse_displaytext(q):
+            if isinstance(q, Question):
+                return q.question_id
+            elif q == None or q == -1:
+                return q
+            raise ValueError(f"Unsupported value for reverse displaytext(): {q}")
+        col_q_ids = [reverse_displaytext(self.question_options[col_q_box.currentIndex()]) for col_q_box in self.col_question_boxes]
+        row_q_ids = [reverse_displaytext(self.question_options[row_q_box.currentIndex()]) for row_q_box in self.row_question_boxes]
+        self.constructor.set_col_question_id(col_q_ids)
+        self.constructor.set_row_question_id(row_q_ids)
+        try:
+            quiz = self.constructor.start_quiz()
+        except RecursionError:
+            # Quiz could not be verified => prompt to force start
+            if show_confirm_window("Unsolveable quiz!", "You are about to create an unsolveable quiz.\nAre you sure you want to continue?"):
+                quiz = self.constructor.start_quiz(force=True)
+        except Exception as e:
+            raise e
+        self.parent.quizwindow = QuizWindow(self.parent, quiz)
+        self.parent.quizwindow.show()
+        self.exit_window()
+
+    def exit_window(self):
+        self.parent.constructorwindow = None
+        self.close()
+
+    def render_grid(self) -> QWidget:
+        """
+        
+        """
+
+        def displaytext(q) -> str:
+            """
+            Create text to display in combobox from Question or -1 or None
+            """
+            if isinstance(q, Question) and q.question_id >= 0:
+                return str(q)
+            elif q == -1:
+                return "Default Question"
+            elif q == None:
+                return "Random Question"
+            raise ValueError(f"Unsupported question: {q}!")
+        
+        self.col_question_boxes:list[QComboBox] = []
+        self.row_question_boxes:list[QComboBox] = []
+        grid = QWidget()
+        grid_layout = QGridLayout()
+        grid_layout.setSpacing(0)
+        self.question_options = [-1, None]
+        self.question_options.extend(self.constructor.all_questions)
+        for row in range(self.constructor.n_rows+1):
+            for col in range(self.constructor.n_cols+1):
+                if row == 0 and col == 0:
+                    grid_widget = QLabel("FormulaDoku!")
+                elif row == 0 or col == 0:
+                    grid_widget = QComboBox()
+                    grid_widget.addItems([displaytext(x) for x in self.question_options])
+                    if row == 0:
+                        self.col_question_boxes.append(grid_widget)
+                    elif col == 0:
+                        self.row_question_boxes.append(grid_widget)
+                else:
+                    grid_widget = QPushButton()
+                    grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
+                    grid_widget.setStyleSheet('background-color : rgba(0, 0, 0, 100); border :1px solid rgba(0, 0, 0, 150)')
+                    grid_widget.setEnabled(False)
+                grid_layout.addWidget(grid_widget, row, col)
+        grid.setLayout(grid_layout)
+        return grid
 
 
 class QuizWindow(QMainWindow):
 
-    def __init__(self, parent:MainWindow, ):
+    def __init__(self, parent:MainWindow, quiz:QuizGame):
         super().__init__()
         self.parent = parent
+        self.quiz=quiz
 
         self.setFixedHeight(GUI_SCALE*200)
         self.setFixedWidth(GUI_SCALE*250)
@@ -166,6 +300,10 @@ class QuizWindow(QMainWindow):
         give_up_button.clicked.connect(self.give_up_button_clicked)
         layout.addWidget(give_up_button)
 
+        cancel_button = QPushButton("Cancel")
+        cancel_button.clicked.connect(self.exit_window)
+        layout.addWidget(cancel_button)
+
         exit_button = new_exit_button()
         layout.addWidget(exit_button)
 
@@ -175,13 +313,10 @@ class QuizWindow(QMainWindow):
     def give_up_button_clicked(self):
         self.quiz.forfeit = True
         self.update_grid()
-        
 
-class DriverQuizWindow(QuizWindow):
-
-    def __init__(self, parent:MainWindow, driverquiz:DriverQuiz):#difficulty:int, n_columns:int, n_rows:int):
-        self.quiz = driverquiz
-        super().__init__(parent)
+    def exit_window(self):
+        self.parent.quizwindow = None
+        self.close()
 
 
 class SearchBox(QMainWindow):
@@ -325,6 +460,42 @@ class AnswerBox(QMainWindow):
     def exit_window(self):
         self.parent.answer_window = None
 
+
+class ConfirmDialog(QDialog):
+    """
+    Single window which asks user to confirm their selection. Call this object through show_confirm_window() method.
+    """
+
+    def __init__(self, title:str, text:str):
+        super().__init__()
+
+        self.setWindowTitle(title)
+
+        QBtn = QDialogButtonBox.StandardButton.Ok | QDialogButtonBox.StandardButton.Cancel
+
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        self.layout = QVBoxLayout()
+        message = QLabel(text)
+        self.layout.addWidget(message)
+        self.layout.addWidget(self.buttonBox)
+        self.setLayout(self.layout)
+
+
+def show_confirm_window(title:str, text:str) -> bool:
+    """
+    Show a window which prompts user to confirm their selection.
+    Parameters:
+        title: str; String for the window title
+        text: str; String for the window text
+    Outputs:
+        Opens ConfirmDialog window with buttons yes and no.
+        Returns True if user presses yes button, else False
+    """
+    confirm_window = ConfirmDialog(title, text)
+    return confirm_window.exec()
 
 def new_exit_button() -> QPushButton:
     """

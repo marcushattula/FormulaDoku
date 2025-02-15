@@ -230,8 +230,14 @@ class QuizGame():
                         return True
             return False
         
+        # If any pair of questions has no mutual answers, it is automatically void
+        for col_q in self.col_questions:
+            for row_q in self.row_questions:
+                if len(col_q.get_mutual_answers(row_q, self.validation_list)) == 0:
+                    return False
+
         all_answers = get_list_of_answers_list()
-        sorted_answers = all_answers#sorted(all_answers, key=len)
+        sorted_answers = sorted(all_answers, key=len)
         return constraints_search(sorted_answers)
     
     def select_cell(self, cellname:str) -> tuple[int,int]:
@@ -549,8 +555,11 @@ class QuizConstructor():
         self.guesses = guesses
     
     def select_question(self, id:int) -> Question:
-        assert isinstance(id, int) and id < len(self.all_questions), f"Question index must be integer less than number of questions! Currently {id}"
-        return self.all_questions[id]
+        assert isinstance(id, int), f"Question index must be integer! Currently {id}"
+        for q in self.all_questions:
+            if q.question_id == id:
+                return q
+        raise ValueError(f"No question with id: {id}!")
     
     def random_question(self) -> Question:
         return random.choice(self.all_questions)
@@ -612,14 +621,16 @@ class QuizConstructor():
                         i_col_question = self.random_question()
                     elif isinstance(i_col_question_id, int) and i_col_question_id < 0:
                         temp_seed = random.random()
-                        i_col_question = new_question(max(min(self.n_cols-i, 3), 1), setseed=temp_seed)
+                        i_col_question = new_question(max(min(self.n_cols-i, self.difficulty), 1), setseed=temp_seed)
                     else:
                         i_col_question = self.select_question(i_col_question_id)
                     temp_id = i_col_question.question_id
-                    if ((isinstance(i_col_question_id, int) and i_col_question_id >= 0) or # If pre-determined question or...
-                        ((i_col_question_id == None or i_col_question_id < 0) and # (if (random or default_logic question) and...
-                        not (any(temp_id == x.question_id for x in new_questions_set[0]) or 
-                        any(temp_id == x.question_id for x in new_questions_set[1])))): # not question already picked, then...
+                    question_predetermined = isinstance(i_col_question_id, int) and i_col_question_id >= 0
+                    random_or_logic = (i_col_question_id == None or i_col_question_id < 0)
+                    not_in_cols_or_rows = not (any([temp_id == x.question_id for x in new_questions_set[0]]) or
+                        any([temp_id == x.question_id for x in new_questions_set[1]]))
+                    question_compatible = True#all([i_col_question.validate_question(other_question, self.quiz.validation_list) for other_question in new_questions_set[1]])
+                    if question_predetermined or (random_or_logic and not_in_cols_or_rows and question_compatible):
                         new_questions_set[0].append(i_col_question)# Append question to set of columns
                         break
             if i < self.n_rows:
@@ -629,15 +640,17 @@ class QuizConstructor():
                         i_row_question = self.random_question()
                     elif isinstance(i_row_question_id, int) and i_row_question_id < 0:
                         temp_seed = random.random()
-                        i_row_question = new_question(max(min(self.n_rows-i, 3), 1), setseed=temp_seed)
+                        i_row_question = new_question(max(min(self.n_rows-i, self.difficulty), 1), setseed=temp_seed)
                     else:
                         i_row_question = self.select_question(i_row_question_id)
                     temp_id = i_row_question.question_id
-                    if ((isinstance(i_row_question_id, int) and i_row_question_id >= 0) or # If pre-determined question or...
-                        ((i_row_question_id == None or i_row_question_id < 0) and # (if (random or default_logic question) and...
-                        not (any(temp_id == x.question_id for x in new_questions_set[0]) or 
-                        any(temp_id == x.question_id for x in new_questions_set[1])))): # not question already picked, then...
-                        new_questions_set[1].append(i_row_question) # Append question to set of rows
+                    question_predetermined = isinstance(i_row_question_id, int) and i_row_question_id >= 0
+                    random_or_logic = (i_row_question_id == None or i_row_question_id < 0)
+                    not_in_cols_or_rows = not (any([temp_id == x.question_id for x in new_questions_set[0]]) or
+                        any([temp_id == x.question_id for x in new_questions_set[1]]))
+                    question_compatible = True#all([i_row_question.validate_question(other_question, self.quiz.validation_list) for other_question in new_questions_set[0]])
+                    if question_predetermined or (random_or_logic and not_in_cols_or_rows and question_compatible):
+                        new_questions_set[1].append(i_row_question)# Append question to set of columns
                         break
         for i in range(self.n_cols):
             self.quiz.set_col_question(i, new_questions_set[0][i])
