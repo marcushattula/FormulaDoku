@@ -677,6 +677,23 @@ class QuizConstructor():
         """
         
         """
+
+        def compare_sets(set1:tuple[list[int], list[int]], set_of_sets:list[tuple[list[int], list[int]]]) -> bool:
+            """
+            Helper function for checking if set1 exists in set_of_sets, regardless of order of internal lists
+            """
+            if set1 in set_of_sets:
+                return True
+            new_col_set = set1[0]
+            new_row_set = set1[1]
+            for set2 in set_of_sets:
+                col_set = set2[0]
+                row_set = set2[1]
+                if (all([int1 in col_set for int1 in new_col_set]) and all([int2 in new_col_set for int2 in col_set]) and
+                    all([int3 in row_set for int3 in new_row_set]) and all([int4 in new_row_set for int4 in row_set])):
+                    return True
+            return False
+
         if force:
             self.update_questions()
             return self.quiz
@@ -688,7 +705,7 @@ class QuizConstructor():
             i += 1
             if i > RECURSION_LIMIT:
                 raise RecursionError("Unable to find compatible set! Please change questions.")
-            elif new_question_set in incompatible_sets:
+            elif compare_sets(new_question_set, incompatible_sets):
                 continue
             validated = self.quiz.full_validation()
             if not validated:
