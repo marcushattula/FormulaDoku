@@ -1,6 +1,6 @@
 import sys
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QDialog, QDialogButtonBox
-from PyQt6 import QtCore
+from PyQt6 import QtCore, QtGui
 
 from quizgame import *
 
@@ -15,8 +15,6 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle(PROJECT_NAME)
-        self.setFixedHeight(GUI_SCALE*200)
-        self.setFixedWidth(GUI_SCALE*200)
 
         self.archive = ArchiveReader(archive_path=ARCHIVE_FILE)
 
@@ -97,8 +95,6 @@ class CreatorWindow(QMainWindow):
         self.parent = parent
         self.constructor = constructor
 
-        self.setFixedHeight(GUI_SCALE*200)
-        self.setFixedWidth(GUI_SCALE*250)
         widget = QWidget()
         layout = QVBoxLayout()
 
@@ -162,6 +158,25 @@ class CreatorWindow(QMainWindow):
         
         """
 
+        class CustomComboBox(QComboBox):
+            def __init__(self):
+                super().__init__()
+                self.setFixedWidth(50*GUI_SCALE)
+
+            def calculate_max_width(self):
+                font_metrics = QtGui.QFontMetrics(self.font())
+                max_width = round(max([font_metrics.horizontalAdvance(item) for item in self.items()])*1.2)
+                return max_width
+
+            def items(self):
+                return [self.itemText(i) for i in range(self.count())]
+
+            def showPopup(self):
+                self.view().setMinimumWidth(self.calculate_max_width())
+                super().showPopup()
+
+
+
         def displaytext(q) -> str:
             """
             Create text to display in combobox from Question or -1 or None
@@ -174,8 +189,8 @@ class CreatorWindow(QMainWindow):
                 return "Random Question"
             raise ValueError(f"Unsupported question: {q}!")
         
-        self.col_question_boxes:list[QComboBox] = []
-        self.row_question_boxes:list[QComboBox] = []
+        self.col_question_boxes:list[CustomComboBox] = []
+        self.row_question_boxes:list[CustomComboBox] = []
         grid = QWidget()
         grid_layout = QGridLayout()
         grid_layout.setSpacing(0)
@@ -186,7 +201,7 @@ class CreatorWindow(QMainWindow):
                 if row == 0 and col == 0:
                     grid_widget = QLabel("FormulaDoku!")
                 elif row == 0 or col == 0:
-                    grid_widget = QComboBox()
+                    grid_widget = CustomComboBox()
                     grid_widget.addItems([displaytext(x) for x in self.question_options])
                     if row == 0:
                         self.col_question_boxes.append(grid_widget)
@@ -208,9 +223,6 @@ class QuizWindow(QMainWindow):
         super().__init__()
         self.parent = parent
         self.quiz=quiz
-
-        self.setFixedHeight(GUI_SCALE*200)
-        self.setFixedWidth(GUI_SCALE*250)
 
         widget = QWidget()
         self.layout = QVBoxLayout()
@@ -245,9 +257,9 @@ class QuizWindow(QMainWindow):
                 if row == 0 and col == 0:
                     grid_widget = QLabel("FormulaDoku!")
                 elif row == 0:
-                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}:\n{str(self.quiz.col_questions[col-1])}")
+                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}:\n{self.quiz.col_questions[col-1].quiz_format_str()}")
                 elif col == 0:
-                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{str(self.quiz.row_questions[row-1])}")
+                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{self.quiz.row_questions[row-1].quiz_format_str()}")
                 else:
                     grid_widget = QPushButton()
                     grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)

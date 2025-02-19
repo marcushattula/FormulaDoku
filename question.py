@@ -148,6 +148,18 @@ class Question():
     def __eq__(self, other_question):
         return str(self) == str(other_question)
     
+    def quiz_format_str(self) -> str:
+        """
+        
+        """
+        if self.modifier:
+            temp_str = self.base + ": " + str(self.modifier)
+            if len(temp_str) > 25:
+                temp_str = self.base + ":\n" + str(self.modifier)
+        else:
+            temp_str = self.base
+        return temp_str
+
     def choose_question(self, difficulty:int, setseed=None, questionID:int=None):
         """
         Set a question. May be predetermined, random or pseudorandom
@@ -281,8 +293,8 @@ class DriverAchievmentQuestion(DriverQuestion):
         (1004, "Pole positions", 5, numberPoles, "get_career_data", "n_poles"),
         ]
     questions2 = [ # Medium questions
-        (1100, "Number of podiums in a season", 6, numberSeasonPodiums, "get_all_seasons_data", "n_wins"),
-        (1101, "Number of points during career", 300, numberPoints, "get_career_data", "n_points"),
+        (1100, "Number of season podiums", 6, numberSeasonPodiums, "get_all_seasons_data", "n_wins"),
+        (1101, "Number of career points", 300, numberPoints, "get_career_data", "n_points"),
         (1102, "Number of wins in a season", 3, numberSeasonWins, "get_all_seasons_data", "n_wins"),
         (1103, "Podiums", 10, numberPodiums, "get_all_seasons_data", "n_podiums"),
         (1104, "No wins", "", noWins, "get_career_data", "n_wins")
