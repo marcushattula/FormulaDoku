@@ -205,7 +205,7 @@ class QuizGame():
                 None
                 Stores the dictionary to self.possible_answers
             """
-            possible_answers_sorted = [x for _, x in sorted(zip(answer_order, possible_answers))]
+            possible_answers_sorted = [x for _, x in sorted(zip(answer_order, possible_answers), key=lambda pair: pair[0])]
             for i in range(self.n_columns):
                 for j in range(self.n_rows):
                     index = i*self.n_rows+j
@@ -696,6 +696,12 @@ class QuizConstructor():
                     all([int3 in row_set for int3 in new_row_set]) and all([int4 in new_row_set for int4 in row_set])):
                     return True
             return False
+
+        if self.guesses == 0:
+            n_guesses = self.n_cols*self.n_rows
+        else:
+            n_guesses == self.guesses
+        self.quiz.set_guesses(n_guesses)
 
         if force:
             self.update_questions()
