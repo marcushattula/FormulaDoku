@@ -11,6 +11,7 @@ Data from Ergast Developer API (https://ergast.com/mrd/db/)
 
 Download CSV Database Tables from Ergast (https://ergast.com/mrd/db/) <br/>
 Download demonyms CSV Table from https://github.com/knowitall/chunkedextractor/blob/master/src/main/resources/edu/knowitall/chunkedextractor/demonyms.csv <br/>
+GUI Quiz requires on PyQT6 graphics package <br/>
 Save these files in the same directory as the scripts (or change default paths in globals.py) <br/>
 Run quizgame.py for playing game in terminal <br/>
 Run guiquiz.py for playing game with GUI <br/>
