@@ -295,10 +295,10 @@ class TestQuizClass(unittest.TestCase):
         driverQuiz.set_col_question(1, question4)
         self.assertTrue(driverQuiz.full_validation())
         valid_answers = {
-            (0, 0): TESTARCHIVE.drivers[2],
-            (0, 1): TESTARCHIVE.drivers[7],
-            (1, 0): TESTARCHIVE.drivers[19],
-            (1, 1): TESTARCHIVE.drivers[62]
+            (0, 0): TESTARCHIVE.drivers[2], # German + WC => Nico Rosberg
+            (0, 1): TESTARCHIVE.drivers[56], # Finnish + WC => Häkkinen
+            (1, 0): TESTARCHIVE.drivers[19], # German + Ferrari => Vettel
+            (1, 1): TESTARCHIVE.drivers[7], # Finnish + Ferrari => Räikkönen
         }
         self.assertTrue(driverQuiz.possible_answers == valid_answers)
 

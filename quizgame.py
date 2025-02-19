@@ -195,22 +195,24 @@ class QuizGame():
                     x.append(valid_answers)
             return x
        
-        def set_possible_answers(possible_answers: list[MyDataClass]) -> None:
+        def set_possible_answers(possible_answers: list[MyDataClass], answer_order:list[int]) -> None:
             """
             Takes list of correct answers and stores it to dictionary for each question
             Parameters:
                 possible_answers: list[MyDataClass]; validated llist of answers
+                answer_order: list[int]; indexes of questions before sorting for performance
             Outputs:
                 None
                 Stores the dictionary to self.possible_answers
             """
+            possible_answers_sorted = [x for _, x in sorted(zip(answer_order, possible_answers))]
             for i in range(self.n_columns):
                 for j in range(self.n_rows):
                     index = i*self.n_rows+j
-                    if index < len(possible_answers):
-                        self.possible_answers[(i, j)] = possible_answers[index]
+                    if index < len(possible_answers_sorted):
+                        self.possible_answers[(i, j)] = possible_answers_sorted[index]
 
-        def constraints_search(ans_list: list[list[MyDataClass]], used_answers=[]) -> bool:
+        def constraints_search(ans_list: list[list[MyDataClass]], answer_order:list[int], used_answers=[]) -> bool:
             """
             Recursively check that there is a unused answer for each question
             Parameters:
@@ -220,13 +222,13 @@ class QuizGame():
                 Stores a found solution to self.possible_answers, if found
             """
             if len(ans_list) == 0:
-                set_possible_answers(used_answers)
+                set_possible_answers(used_answers, answer_order)
                 return True
             for answer in ans_list[0]:
                 if answer not in used_answers:
                     temp_arr = used_answers.copy()
                     temp_arr.append(answer)
-                    if constraints_search(ans_list[1:], used_answers=temp_arr):
+                    if constraints_search(ans_list[1:], answer_order, used_answers=temp_arr):
                         return True
             return False
         
@@ -238,7 +240,8 @@ class QuizGame():
 
         all_answers = get_list_of_answers_list()
         sorted_answers = sorted(all_answers, key=len)
-        return constraints_search(sorted_answers)
+        index_order = [all_answers.index(ans_list) for ans_list in sorted_answers]
+        return constraints_search(sorted_answers, index_order)
     
     def select_cell(self, cellname:str) -> tuple[int,int]:
         """
