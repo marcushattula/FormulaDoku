@@ -85,6 +85,17 @@ class Driver(MyDataClass):
         year = season.year
         self.season_entries[year] = season
   
+    def get_seasons_map(self, field:str):
+        """
+        
+        """
+        seasons_map = {}
+        for season_year in self.get_all_seasons_data().keys():
+            season_stats = self.get_all_seasons_data[season_year]
+            assert field in season_stats.keys(), f"Missing field '{field}'!"
+            seasons_map[season_year] = season_stats[season_year]
+        return seasons_map
+
     def get_season_data(self, year:int):
         """
         Get the results of this driver for a given year
@@ -148,4 +159,16 @@ class Driver(MyDataClass):
             career_results["n_sprint_poles"] += season_data["n_sprint_poles"]
         self._career_data = career_results
         return self.get_career_data()
-    
+
+    def get_wins_per_country(self):
+        wins_per_country_dict = {}
+        for season_year in self.get_all_seasons_data().keys():
+            season_data = self.get_all_seasons_data()[season_year]
+            for i_win in season_data["wins"]:
+                win_race = season_data["entries"][i_win]
+                country = win_race.circuit.country
+                if country in wins_per_country_dict.keys():
+                    wins_per_country_dict[country].append(win_race)
+                else:
+                    wins_per_country_dict[country] = [win_race]
+        return wins_per_country_dict
