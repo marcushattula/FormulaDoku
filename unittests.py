@@ -225,6 +225,7 @@ class TestMyDataClasses(unittest.TestCase):
         wehrlein = TESTARCHIVE.drivers[835]
         self.assertTrue(wehrlein.map_to_string(["get_career_data", "n_points"]) == "6.0")
         self.assertTrue(wehrlein.map_to_string(["get_all_seasons_data", "n_entries"]) == "2016: 21, 2017: 18")
+        self.assertTrue(wehrlein.map_to_string(["teams", "name"]) == "Manor Marussia, Sauber")
 
 
 class TestQuestions(unittest.TestCase):

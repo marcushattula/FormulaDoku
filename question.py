@@ -372,9 +372,9 @@ class DriverSpecialQuestion(DriverQuestion):
         (4102, "Has had teammate", "Fernando Alonso", hasTeammateSimple, "teammates")
     ]
     questions3 = [
-        (4200, "Won a race in", 2012, wonRaceInYear, "get_all_seasons_data", "n_wins"),
-        (4201, "Won a race on home soil", "", wonHomeRace, "get_all_seasons_data", "wins"),
-        (4202, "Won a race in", "Monaco", wonRaceIn, "get_all_seasons_data", "wins")
+        (4200, "Won a race in", 2012, wonRaceInYear, "get_all_seasons_data", 2012, ("entries", "wins"), "name"),
+        (4201, "Won a race on home soil", "", wonHomeRace, "get_home_wins"),
+        (4202, "Won a race in", "Monaco", wonRaceIn, "get_wins_per_country", "monaco")
     ]
 
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:

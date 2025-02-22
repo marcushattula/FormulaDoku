@@ -117,7 +117,7 @@ class Driver(MyDataClass):
         if hasattr(self, "_all_seasons_data") and self._all_seasons_data:
             return self._all_seasons_data
         all_season_data = {}
-        for season_year in self.season_entries.keys():
+        for season_year in sorted(self.season_entries.keys()):
             season = self.season_entries[season_year]
             all_season_data[season_year] = season.get_driver_stats(self)
         self._all_seasons_data = all_season_data
@@ -172,3 +172,7 @@ class Driver(MyDataClass):
                 else:
                     wins_per_country_dict[country] = [win_race]
         return wins_per_country_dict
+    
+    def get_home_wins(self):
+        wins_per_country = self.get_wins_per_country()
+        return [] if not self.country in wins_per_country else wins_per_country[self.country]

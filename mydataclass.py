@@ -63,24 +63,54 @@ class MyDataClass():
         Outputs:
             s: str; string of mapped fields
         """
-        if bonus_fields[0] == None or bonus_fields[0] == "":
-            return ""
-        mappable = self.get_field(bonus_fields[0])
-        if callable(mappable):
-            mappable = mappable()
-        if isinstance(mappable, list):
-            if len(bonus_fields) > 1 and isinstance(bonus_fields[1], int):
-                return str(mappable[bonus_fields[1]])
-            elif len(bonus_fields) > 1 and isinstance(bonus_fields[1], str) and all([hasattr(x, bonus_fields[1]) for x in mappable]):
-                return ", ".join([x.get_field(bonus_fields[1]) for x in mappable])
-            else:
+
+        def iterative_mapper(mappable, next_fields):
+            if callable(mappable):
+                mappable = mappable()
+            if len(next_fields) == 0: # If no more instructions => return latest mappable
+                if isinstance(mappable, list): # If mappable is list...
+                    return ", ".join([str(x) for x in mappable])
+                else:
+                    return str(mappable)
+            elif next_fields[0] == "" or next_fields[0] == None:
                 return ""
-        elif isinstance(mappable, dict) and all([(isinstance(mappable[x], dict) and bonus_fields[1] in mappable[x]) for x in mappable.keys()]):
-            return ", ".join([f"{str(x)}: {str(mappable[x][bonus_fields[1]])}" for x in mappable.keys()])
-        elif isinstance(mappable, dict) and bonus_fields[1] in mappable.keys():
-            return str(mappable[bonus_fields[1]])
-        else:
-            return str(mappable)
+            elif isinstance(next_fields[0], str) and hasattr(mappable, next_fields[0]):
+                return iterative_mapper(getattr(mappable, next_fields[0]), next_fields[1:])
+            elif isinstance(mappable, list): # If mappable is list...
+                if len(next_fields) == 1: # If final instruction => map list obj to instruction
+                    return ", ".join([iterative_mapper(x, next_fields[1:]) for x in mappable])
+                else:
+                    return iterative_mapper(mappable, next_fields[1:])
+            elif isinstance(mappable, dict): # If mappable is dictionary...
+                if next_fields[0] in mappable.keys():
+                    return iterative_mapper(mappable[next_fields[0]], next_fields[1:])
+                elif isinstance(next_fields[0], tuple) and len(next_fields[0]) == 2:
+                    iterator = mappable[next_fields[0][1]]
+                    return ", ".join([iterative_mapper(mappable[next_fields[0][0]][x], next_fields[1:]) for x in iterator])
+                else:
+                    return ", ".join([f"{str(x)}: {iterative_mapper(mappable[x][next_fields[0]], next_fields[1:])}" for x in mappable.keys()])
+            else: # 
+                raise ValueError(f"Unable to resolve mapping of {mappable} to {next_fields[0]}")
+
+        return iterative_mapper(self, bonus_fields)
+    
+        # 
+        # mappable = self.get_field(bonus_fields[0])
+        # if callable(mappable):
+        #     mappable = mappable()
+        # if isinstance(mappable, list):
+        #     if len(bonus_fields) > 1 and isinstance(bonus_fields[1], int):
+        #         return str(mappable[bonus_fields[1]])
+        #     elif len(bonus_fields) > 1 and isinstance(bonus_fields[1], str) and all([hasattr(x, bonus_fields[1]) for x in mappable]):
+        #         return ", ".join([x.get_field(bonus_fields[1]) for x in mappable])
+        #     else:
+        #         return ""
+        # elif isinstance(mappable, dict) and all([(isinstance(mappable[x], dict) and bonus_fields[1] in mappable[x]) for x in mappable.keys()]):
+        #     return ", ".join([f"{str(x)}: {str(mappable[x][bonus_fields[1]])}" for x in mappable.keys()])
+        # elif isinstance(mappable, dict) and bonus_fields[1] in mappable.keys():
+        #     return str(mappable[bonus_fields[1]])
+        # else:
+        #     return str(mappable)
         
     def get_field(self, field:str):
         """
