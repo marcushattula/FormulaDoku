@@ -309,8 +309,8 @@ class DriverAchievmentQuestion(DriverQuestion):
     ]
     questions3 = [ # Hard questions
         (1201, "Sprint wins", 1, numberSprintWins, "get_career_data", "n_sprint_wins"),
-        (1201, "Scored zero during any season", "", noSeasonPoints, "get_all_seasons_data", "n_points"),
-        (1202, "No pole positions", "", noPoles, "get_career_data", "n_poles")
+        (1202, "Scored zero during any season", "", noSeasonPoints, "get_all_seasons_data", "n_points"),
+        (1203, "No pole positions", "", noPoles, "get_career_data", "n_poles")
     ]
 
     def __init__(self, difficulty:int, setseed:int=None, questionID:int=None) -> None:
