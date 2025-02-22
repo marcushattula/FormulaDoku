@@ -428,9 +428,9 @@ class AnswerBox(QMainWindow):
         
         widget.setLayout(layout)
 
-        scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
-        scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        scroll.setWidgetResizable(True)
+        # scroll.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
+        # scroll.setHorizontalScrollBarPolicy(QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        # scroll.setWidgetResizable(True)
         scroll.setWidget(widget)
 
         return scroll
@@ -442,7 +442,8 @@ class AnswerBox(QMainWindow):
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)
-        layout.addWidget(label3, layout_row, 2)
+        if not question1.base == question2.base:
+            layout.addWidget(label3, layout_row, 2)
 
     def obj_line(self, object:MyDataClass, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
         label1 = QLabel(str(object))
@@ -451,7 +452,8 @@ class AnswerBox(QMainWindow):
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)
-        layout.addWidget(label3, layout_row, 2)
+        if not question1.base == question2.base:
+            layout.addWidget(label3, layout_row, 2)
   
     def bottom_row(self):
         widget = QWidget()
