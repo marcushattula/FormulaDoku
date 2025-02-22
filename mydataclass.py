@@ -45,7 +45,7 @@ class MyDataClass():
                 temp = None
             setattr(self,self.data_fields[i], temp)
 
-    def map_to_string(self, field1:str, field2=None) -> str:
+    def map_to_string(self, bonus_fields:list) -> str:
         """
         Get any field of this object and map according to other fields, field1 may be callable
         Example:
@@ -63,25 +63,25 @@ class MyDataClass():
         Outputs:
             s: str; string of mapped fields
         """
-        if field1 == "":
+        if bonus_fields[0] == None or bonus_fields[0] == "":
             return ""
-        mappable = self.get_field(field1)
+        mappable = self.get_field(bonus_fields[0])
         if callable(mappable):
             mappable = mappable()
         if isinstance(mappable, list):
-            if isinstance(field2, int):
-                return str(mappable[field2])
-            elif isinstance(field2, str) and all([hasattr(x, field2) for x in mappable]):
-                return ", ".join([x.get_field(field2) for x in mappable])
+            if len(bonus_fields) > 1 and isinstance(bonus_fields[1], int):
+                return str(mappable[bonus_fields[1]])
+            elif len(bonus_fields) > 1 and isinstance(bonus_fields[1], str) and all([hasattr(x, bonus_fields[1]) for x in mappable]):
+                return ", ".join([x.get_field(bonus_fields[1]) for x in mappable])
             else:
                 return ""
-        elif isinstance(mappable, dict) and all([(isinstance(mappable[x], dict) and field2 in mappable[x]) for x in mappable.keys()]):
-            return ", ".join([f"{str(x)}: {str(mappable[x][field2])}" for x in mappable.keys()])
-        elif isinstance(mappable, dict) and field2 in mappable.keys():
-            return str(mappable[field2])
+        elif isinstance(mappable, dict) and all([(isinstance(mappable[x], dict) and bonus_fields[1] in mappable[x]) for x in mappable.keys()]):
+            return ", ".join([f"{str(x)}: {str(mappable[x][bonus_fields[1]])}" for x in mappable.keys()])
+        elif isinstance(mappable, dict) and bonus_fields[1] in mappable.keys():
+            return str(mappable[bonus_fields[1]])
         else:
             return str(mappable)
-
+        
     def get_field(self, field:str):
         """
         Fetch a value of a certain field. Assertion protected.

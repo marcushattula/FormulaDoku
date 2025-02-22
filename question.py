@@ -1,6 +1,8 @@
 import random
-from mydataclass import MyDataClass
+from mydataclass import MyDataClass, find_single_object_by_field_value
+from driver import Driver
 from globals import remove_accents, sumWithNone
+from readArchive import ArchiveReader
 
 def numberWins(n:int, answer:MyDataClass) -> bool:
     """
@@ -93,7 +95,10 @@ def noPoles(n:int, answer:MyDataClass) -> bool:
 def noSeasonPoints(n:int, answer:MyDataClass) -> bool:
     return any([sumWithNone(answer.get_season_data(year)["points"]) == 0 for year in answer.season_data.keys()]) 
 
-def hasTeammate(teammatename:str, answer:MyDataClass) -> bool:
+def hasTeammate(teammate:Driver, answer:MyDataClass) -> bool:
+    return teammate in answer.teammates
+
+def hasTeammateSimple(teammatename:str, answer:MyDataClass) -> bool:
     return any(remove_accents(teammate.fullname) == remove_accents(teammatename) 
                for teammate in answer.teammates)
 
@@ -129,8 +134,6 @@ class Question():
         self.base:str = None
         self.modifier = None
         self.func = None
-        self.map_field1 = None
-        self.map_field2 = None
         self._mutual_answers = {}
     
     def __str__(self) -> str:
@@ -160,6 +163,14 @@ class Question():
             temp_str = self.base
         return temp_str
 
+    def set_question(self, question_tuple:tuple) -> None:
+        assert len(question_tuple) > 4, f"At least 4 fields expected in question tuple, currently {len(question_tuple)}!"
+        self.question_id = question_tuple[0]
+        self.base = question_tuple[1]
+        self.modifier = question_tuple[2]
+        self.func = question_tuple[3]
+        self.bonus_fields = [question_tuple[i] for i in range(4, len(question_tuple))]
+
     def choose_question(self, difficulty:int, setseed=None, questionID:int=None):
         """
         Set a question. May be predetermined, random or pseudorandom
@@ -169,15 +180,12 @@ class Question():
             (Optional) questionID: int; ID of predetermined question. Default = None
         """
         if isinstance(questionID, int):
-            self.question = self.get_question(questionID)
+            new_question_tuple = self.get_question(questionID)
         else:
-            self.question = self.random_question(difficulty, setseed=setseed)
-        self.question_id = self.question[0]
-        self.base = self.question[1]
-        self.modifier = self.question[2]
-        self.func = self.question[3]
-
-    def random_question(self, difficulty:int, setseed=None):
+            new_question_tuple = self.random_question(difficulty, setseed=setseed)
+        self.set_question(new_question_tuple)
+    
+    def random_question(self, difficulty:int, setseed=None) -> tuple:
         """
         Choose a question depending on difficulty. One question cannot be selected multiple times.
         Parameters:
@@ -193,7 +201,7 @@ class Question():
         elif difficulty == 3:
             return random.choice(self.questions3)
     
-    def get_question(self, question_id:int):
+    def get_question(self, question_id:int) -> tuple:
         """
         Set predetermined question based on question id
         Parameters:
@@ -359,9 +367,9 @@ class DriverSpecialQuestion(DriverQuestion):
         (4000, "WILDCARD", "FREE SPACE", wildcard, "")
     ]
     questions2 = [
-        (4100, "Has had teammate", "Michael Schumacher", hasTeammate, "teammates"),
-        (4101, "Has had teammate", "Kimi Räikkönen", hasTeammate, "teammates"),
-        (4102, "Has had teammate", "Fernando Alonso", hasTeammate, "teammates")
+        (4100, "Has had teammate", "Michael Schumacher", hasTeammateSimple, "teammates"),
+        (4101, "Has had teammate", "Kimi Räikkönen", hasTeammateSimple, "teammates"),
+        (4102, "Has had teammate", "Fernando Alonso", hasTeammateSimple, "teammates")
     ]
     questions3 = [
         (4200, "Won a race in", 2012, wonRaceInYear, "get_all_seasons_data", "n_wins"),
@@ -372,6 +380,53 @@ class DriverSpecialQuestion(DriverQuestion):
     def __init__(self, difficulty, setseed:int=None, questionID:int=None) -> None:
         super().__init__()
         self.choose_question(difficulty, setseed=setseed, questionID=questionID)
+
+class QuestionGenerator():
+    """
+    Object for procedurally generating questions
+    """
+    question_formulae = [] # Formulae for questions (id, base, modifier type, check function, get data function, subfield1, subfield2...)
+
+    def __init__(self, archive, validation_list_name:str):
+        self.archive = archive
+        self.validation_list_name = validation_list_name
+    
+    def get_validation_list(self):
+        assert hasattr(self.archive, self.validation_list_name), f"Archive missing attribute '{self.validation_list_name}'"
+        return getattr(self.archive, self.validation_list_name)
+
+    def get_formula_from_id(self, id:int):
+        assert isinstance(id, int) and id >= 0, "Question id must be positive integer!"
+        for formula in self.question_formulae:
+            if formula[0] == id:
+                return formula
+        raise ValueError(f"No question formula with id {id} found!")
+    
+    def get_modifier(self, modifier_id:int) -> MyDataClass:
+        raise NotImplementedError("Not defined for parent class! Use subclasses!")
+
+    def generate_question(self, id:int, modifier) -> Question:
+        question_formula = self.get_formula_from_id(id)
+        assert type(modifier) == question_formula[2], f"Mismatching formula modifier type! Exptected {question_formula[2]}, got {type(modifier)}!"
+        new_q = Question()
+        new_question_formula = list(question_formula)
+        new_question_formula[2] = modifier
+        new_q.set_question(tuple(new_question_formula))
+        return new_q
+
+class DriverQuestionGenerator(QuestionGenerator):
+
+    question_formulae = [
+        (1, "Number of race wins", int, numberWins, "get_career_data", "n_wins"),
+        (2, "Number of championships", int, numberChampionships, "get_career_data", "n_championships"),
+        (3, "Has been teammates with", Driver, hasTeammate, "teammates")
+    ]
+
+    def __init__(self, archive:ArchiveReader):
+        super().__init__(archive, "drivers")
+
+    def get_modifier(self, modifier_id:int):
+        return find_single_object_by_field_value(self.get_validation_list(), "driverId", modifier_id)
 
 def new_question(difficulty:int, questiontype:int=None, setseed=None, questionID:int=None) -> Question:
     """

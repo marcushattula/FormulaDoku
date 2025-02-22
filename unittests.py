@@ -9,7 +9,7 @@ from constructor import Constructor
 from driver import Driver
 from race import Race, Result, RACE_RESULT_DATA_FIELDS
 from season import Season
-from question import Question, DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question, all_questions
+from question import Question, DriverAchievmentQuestion, DriverDataQuestion, DriverTeamQuestion, new_question, all_questions, DriverQuestionGenerator
 from quizgame import QuizGame, DriverQuiz, QuizConstructor
 
 TESTARCHIVE = ArchiveReader(archive_path=ARCHIVE_FILE, skip=True)
@@ -223,8 +223,8 @@ class TestMyDataClasses(unittest.TestCase):
 
     def test_mapStrFunction(self):
         wehrlein = TESTARCHIVE.drivers[835]
-        self.assertTrue(wehrlein.map_to_string("get_career_data", field2="n_points") == "6.0")
-        self.assertTrue(wehrlein.map_to_string("get_all_seasons_data", field2="n_entries") == "2016: 21, 2017: 18")
+        self.assertTrue(wehrlein.map_to_string(["get_career_data", "n_points"]) == "6.0")
+        self.assertTrue(wehrlein.map_to_string(["get_all_seasons_data", "n_entries"]) == "2016: 21, 2017: 18")
 
 
 class TestQuestions(unittest.TestCase):
@@ -254,7 +254,23 @@ class TestQuestions(unittest.TestCase):
         question1 = new_question(1, questiontype=1, questionID=1001) # World championships: 1
         self.assertTrue(len(questions) > 30, "Found fewer questions than expected!")
         self.assertTrue(question1 in questions, "Expected question missing from all questions!")
-        
+
+class TestQuestionGenerator(unittest.TestCase):
+
+    def test_GeneratorInit(self):
+        generator = DriverQuestionGenerator(TESTARCHIVE)
+        new_q = generator.generate_question(2, 4)
+        self.assertTrue(isinstance(new_q, Question), "Question generator should return object of type Question!")
+        question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
+        self.assertTrue(len(question_answers) == 6, error_msg("number of answers", 6, len(question_answers)))
+    
+    def test_CustomQuestion(self):
+        generator = DriverQuestionGenerator(TESTARCHIVE)
+        new_modifier = generator.get_modifier(841) # Giovinazzi
+        new_q = generator.generate_question(3, new_modifier)
+        question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
+        self.assertTrue(len(question_answers) == 3, error_msg("number of answers", 3, len(question_answers)))
+
 
 class TestQuizClass(unittest.TestCase):
     """
