@@ -255,21 +255,38 @@ class TestQuestions(unittest.TestCase):
         self.assertTrue(len(questions) > 30, "Found fewer questions than expected!")
         self.assertTrue(question1 in questions, "Expected question missing from all questions!")
 
+
 class TestQuestionGenerator(unittest.TestCase):
 
     def test_GeneratorInit(self):
         generator = DriverQuestionGenerator(TESTARCHIVE)
-        new_q = generator.generate_question(2, 4)
+        new_q = generator.generate_question(2, 4) # Championships: 4
         self.assertTrue(isinstance(new_q, Question), "Question generator should return object of type Question!")
         question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(question_answers) == 6, error_msg("number of answers", 6, len(question_answers)))
     
     def test_CustomQuestion(self):
         generator = DriverQuestionGenerator(TESTARCHIVE)
-        new_modifier = generator.get_modifier(841) # Giovinazzi
-        new_q = generator.generate_question(3, new_modifier)
+        new_modifier = find_single_object_by_field_value(TESTARCHIVE.drivers, "driverId", 841) # Giovinazzi
+        new_q = generator.generate_question(3, new_modifier) # Teammates with Gio
         question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(question_answers) == 3, error_msg("number of answers", 3, len(question_answers)))
+    
+    def test_PredeterminedQuestion(self):
+        generator = DriverQuestionGenerator(TESTARCHIVE)
+        new_q1 = generator.predetermined_question(100050) # Race wins: 50
+        q1answers = new_q1.get_all_answers(TESTARCHIVE.drivers)
+        self.assertTrue(len(q1answers) == 5, error_msg("number of answers", 5, len(q1answers)))
+        new_q2 = generator.predetermined_question(200005) # Championships: 5
+        q2answers = new_q2.get_all_answers(TESTARCHIVE.drivers)
+        self.assertTrue(len(q2answers) == 3, error_msg("number of answers", 3, len(q2answers)))
+        mutual_answers = new_q1.get_mutual_answers(new_q2, TESTARCHIVE.drivers)
+        self.assertTrue(len(mutual_answers) == 2, error_msg("number of answers", 2, len(mutual_answers)))
+
+    def test_ImpossibleQuestion(self):
+        generator = DriverQuestionGenerator(TESTARCHIVE)
+        self.assertRaises(AssertionError, generator.predetermined_question, 299999) # Championships: 99999
+        self.assertRaises(AssertionError, generator.predetermined_question, 199999) # Race wins: 99999
 
 
 class TestQuizClass(unittest.TestCase):

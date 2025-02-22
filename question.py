@@ -402,17 +402,34 @@ class QuestionGenerator():
                 return formula
         raise ValueError(f"No question formula with id {id} found!")
     
-    def get_modifier(self, modifier_id:int) -> MyDataClass:
-        raise NotImplementedError("Not defined for parent class! Use subclasses!")
+    def generate_custom_question(self, question_id:int, modifier_id:int) -> Question:
+        question_formula = self.get_formula_from_id(question_id)
+        if question_formula[2] == Driver:
+            modifier = find_single_object_by_field_value(self.archive.drivers, "driverId", modifier_id)
+        elif question_formula[2] == int:
+            modifier = modifier_id
+        return self.generate_question(question_id, modifier)
 
-    def generate_question(self, id:int, modifier) -> Question:
+    def generate_question(self, id:int, modifier: int|MyDataClass) -> Question:
         question_formula = self.get_formula_from_id(id)
         assert type(modifier) == question_formula[2], f"Mismatching formula modifier type! Exptected {question_formula[2]}, got {type(modifier)}!"
         new_q = Question()
         new_question_formula = list(question_formula)
         new_question_formula[2] = modifier
         new_q.set_question(tuple(new_question_formula))
+        assert len(new_q.get_all_answers(self.get_validation_list())) > 0, "Generated question has no answers!"
         return new_q
+    
+    def predetermined_question(self, identifier:int) -> Question:
+        """
+        Fully generate a custom question based solely on one integer
+        Parameters:
+            identifier: int; XXXXXYYYY => question id XXXXX, modifier id YYYYY 
+        """
+        assert len(str(identifier)) > 5, "Identifier must be at least 6 digits!"
+        modifier_id = int(str(identifier)[-5:])
+        question_id = int(str(identifier)[:-5])
+        return self.generate_custom_question(question_id, modifier_id)
 
 class DriverQuestionGenerator(QuestionGenerator):
 
@@ -424,9 +441,6 @@ class DriverQuestionGenerator(QuestionGenerator):
 
     def __init__(self, archive:ArchiveReader):
         super().__init__(archive, "drivers")
-
-    def get_modifier(self, modifier_id:int):
-        return find_single_object_by_field_value(self.get_validation_list(), "driverId", modifier_id)
 
 def new_question(difficulty:int, questiontype:int=None, setseed=None, questionID:int=None) -> Question:
     """
