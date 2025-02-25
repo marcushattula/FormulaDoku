@@ -263,6 +263,7 @@ class TestQuestionGenerator(unittest.TestCase):
         generator = DriverQuestionGenerator(TESTARCHIVE)
         new_q = generator.generate_question(2, 4) # Championships: 4
         self.assertTrue(isinstance(new_q, Question), "Question generator should return object of type Question!")
+        self.assertTrue(str(new_q) == "At least 4 championships")
         question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(question_answers) == 6, error_msg("number of answers", 6, len(question_answers)))
     
@@ -270,6 +271,7 @@ class TestQuestionGenerator(unittest.TestCase):
         generator = DriverQuestionGenerator(TESTARCHIVE)
         new_modifier = find_single_object_by_field_value(TESTARCHIVE.drivers, "driverId", 841) # Giovinazzi
         new_q = generator.generate_question(3, new_modifier) # Teammates with Gio
+        self.assertTrue(str(new_q) == "Has been teammates with Antonio Giovinazzi")
         question_answers = new_q.get_all_answers(TESTARCHIVE.drivers)
         self.assertTrue(len(question_answers) == 3, error_msg("number of answers", 3, len(question_answers)))
     

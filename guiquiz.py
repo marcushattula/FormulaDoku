@@ -257,9 +257,9 @@ class QuizWindow(QMainWindow):
                 if row == 0 and col == 0:
                     grid_widget = QLabel("FormulaDoku!")
                 elif row == 0:
-                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}:\n{self.quiz.col_questions[col-1].quiz_format_str()}")
+                    grid_widget = QLabel(f"{self.quiz.colnames[col-1]}:\n{self.quiz.col_questions[col-1].quiz_format_question_str()}")
                 elif col == 0:
-                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{self.quiz.row_questions[row-1].quiz_format_str()}")
+                    grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{self.quiz.row_questions[row-1].quiz_format_question_str()}")
                 else:
                     grid_widget = QPushButton()
                     grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
@@ -437,8 +437,8 @@ class AnswerBox(QMainWindow):
 
     def top_row(self, question1:Question, question2:Question, layout:QGridLayout, layout_row:int) -> QWidget:
         label1 = QLabel("Valid answer")
-        label2 = QLabel(str(question1.base))
-        label3 = QLabel(str(question2.base))
+        label2 = QLabel(question1.quiz_format_answer_str())
+        label3 = QLabel(question2.quiz_format_answer_str())
 
         layout.addWidget(label1, layout_row, 0)
         layout.addWidget(label2, layout_row, 1)
