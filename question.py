@@ -395,9 +395,10 @@ class QuestionGenerator():
     """
     question_formulae = [] # Formulae for questions (id, base, modifier type, check function, get data function, subfield1, subfield2...)
 
-    def __init__(self, archive, validation_list_name:str):
+    def __init__(self, archive, validation_list_name:str, min_answers:int=1):
         self.archive = archive
         self.validation_list_name = validation_list_name
+        self.minimum_answers = min_answers
     
     def get_validation_list(self):
         assert hasattr(self.archive, self.validation_list_name), f"Archive missing attribute '{self.validation_list_name}'"
@@ -425,7 +426,7 @@ class QuestionGenerator():
         new_question_formula = list(question_formula)
         new_question_formula[2] = modifier
         new_q.set_question(tuple(new_question_formula))
-        assert len(new_q.get_all_answers(self.get_validation_list())) > 0, "Generated question has no answers!"
+        assert len(new_q.get_all_answers(self.get_validation_list())) >= self.minimum_answers, "Generated question has no answers!"
         return new_q
     
     def predetermined_question(self, identifier:int) -> Question:
