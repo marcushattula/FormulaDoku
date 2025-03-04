@@ -422,7 +422,7 @@ class AnswerBox(QMainWindow):
 
         i = 0
         self.top_row(col_question, row_question, layout, i)
-        for obj in col_question.get_mutual_answers(row_question, self.parent.quiz.validation_list):
+        for obj in sorted(col_question.get_mutual_answers(row_question, self.parent.quiz.validation_list), key=lambda x: min(x.get_all_seasons_data().keys())):
             i += 1
             self.obj_line(obj, col_question, row_question, layout, i)
         
