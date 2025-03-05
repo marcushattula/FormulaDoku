@@ -739,5 +739,4 @@ if __name__ == "__main__":
     qc = QuizConstructor(archive, n_cols=3, n_rows=3, seed=7)
     qc.create_quiz()
     qg = qc.start_quiz()
-    breakpoint()
-    #play_driver_game()
+    qg.play_game()
