@@ -1,6 +1,7 @@
 import sys
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QDialog, QDialogButtonBox
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QCompleter, QLineEdit, QPushButton, QGridLayout, QVBoxLayout, QHBoxLayout, QLabel, QComboBox, QScrollArea, QDialog, QDialogButtonBox, QGraphicsOpacityEffect
 from PyQt6 import QtCore, QtGui
+from time import sleep
 
 from quizgame import *
 
@@ -248,10 +249,10 @@ class QuizWindow(QMainWindow):
         return info_widget
 
     def render_grid(self) -> QWidget:
-        
         grid = QWidget()
         grid_layout = QGridLayout()
         grid_layout.setSpacing(0)
+        self.gridwidgets = {}
         for row in range(self.quiz.n_rows+1):
             for col in range(self.quiz.n_columns+1):
                 if row == 0 and col == 0:
@@ -261,48 +262,43 @@ class QuizWindow(QMainWindow):
                 elif col == 0:
                     grid_widget = QLabel(f"{self.quiz.rownames[row-1]}:\n{self.quiz.row_questions[row-1].quiz_format_question_str()}")
                 else:
-                    grid_widget = QPushButton()
-                    grid_widget.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
-                    grid_widget.setStyleSheet('background-color : rgba(0, 0, 0, 100); border :1px solid rgba(0, 0, 0, 150)')
-                    if (col-1, row-1) in self.quiz.solved_cells: # Cell has been solved => box is green, add given answer and diable
-                        grid_widget.setStyleSheet("background-color: green")
-                        grid_widget.setEnabled(False)
-                        grid_widget.setText(str(self.quiz.given_answers[(col-1, row-1)]))
-                    if self.quiz.game_ended():
-                        if (col-1, row-1) not in self.quiz.solved_cells:
-                            grid_widget.setStyleSheet("background-color: red")
-                        grid_widget.setEnabled(True)
-                        grid_widget.clicked.connect(lambda _, c=col, r=row: self.answer_box_clicked(c-1, r-1))
-                    else:
-                        grid_widget.clicked.connect(lambda _, c=col, r=row: self.box_clicked(c-1, r-1))
+                    grid_widget = QuestionButton()
+                    grid_widget.clicked.connect(lambda _, c=col, r=row: self.box_clicked(c-1, r-1))
+                    self.gridwidgets[(col-1, row-1)] = grid_widget
                 grid_layout.addWidget(grid_widget, row, col)
         grid.setLayout(grid_layout)
         return grid
 
     def update_grid(self):
-        self.layout.removeWidget(self.gridwidget)
-        self.layout.removeWidget(self.bottomrow)
-        self.gridwidget = self.render_grid()
-        self.layout.addWidget(self.gridwidget, 0)
-        self.layout.addWidget(self.bottomrow)
+        for col in range(self.quiz.n_columns):
+            for row in range(self.quiz.n_rows):
+                self.gridwidgets[col, row].update(game_ended=self.quiz.game_ended())
 
     def box_clicked(self, column:int, row:int):
-        self.search_window = SearchBox(self, [x.fullname for x in self.quiz.validation_list], column, row)
-        self.search_window.show()
-
-    def answer_box_clicked(self, column:int, row:int):
-        if (column, row) in self.quiz.given_answers:
-            given_answer = self.quiz.given_answers[(column, row)]
+        if not self.quiz.game_ended():
+            self.search_window = SearchBox(self, [x.fullname for x in self.quiz.validation_list], column, row)
+            self.search_window.show()
         else:
-            given_answer = None
-        self.answer_window = AnswerBox(self, given_answer, column, row)
-        self.answer_window.show()
+            if (column, row) in self.quiz.given_answers:
+                given_answer = self.quiz.given_answers[(column, row)]
+            else:
+                given_answer = None
+            self.answer_window = AnswerBox(self, given_answer, column, row)
+            self.answer_window.show()
 
     def answer_given(self, given_answer:str, column:int, row:int):
         dataclass:MyDataClass = self.quiz.string_to_dataclass(remove_accents(given_answer))
         if dataclass != None:
-            self.quiz.answer_question(column, row, dataclass)
+            correct_ans = self.quiz.answer_question(column, row, dataclass)
+            temp_widget = self.gridwidgets[column, row]
+            if correct_ans:
+                temp_widget.solved = True
+                temp_widget.given_answer = str(dataclass)
+                temp_widget.update()
+            elif not self.quiz.game_ended():
+                temp_widget.flash_color()
             self.update_grid()
+
 
     def bottom_row(self) -> QWidget:
         widget = QWidget()
@@ -329,6 +325,37 @@ class QuizWindow(QMainWindow):
     def exit_window(self):
         self.parent.quizwindow = None
         self.close()
+
+
+class QuestionButton(QPushButton):
+    def __init__(self):
+        super().__init__()
+        self.solved = False
+        self.given_answer = None
+        self.original_color = "lightgrey"
+        self.setFixedSize(50*GUI_SCALE, 50*GUI_SCALE)
+        self.setStyleSheet(f"background-color : {self.original_color} ; border :1px solid rgba(0, 0, 0, 150)")
+
+    def update(self, game_ended=False):
+        if self.solved:
+            self.setStyleSheet("background-color: green ; border : 1px solid rgba(0, 0, 0, 150)")
+            self.setEnabled(False)
+            self.setText(self.given_answer)
+        if game_ended:
+            if not self.solved:
+                self.setStyleSheet("background-color: red ; border : 1px solid rgba(0, 0, 0, 150)")
+            self.setEnabled(True)
+
+    def flash_color(self, duration=1000):
+        self.animation = QtCore.QVariantAnimation()
+        self.animation.setDuration(duration)
+        self.animation.setStartValue(QtGui.QColor("red"))
+        self.animation.setEndValue(QtGui.QColor(self.original_color))
+        self.animation.valueChanged.connect(self._update_color)
+        self.animation.start()
+
+    def _update_color(self, color):
+        self.setStyleSheet(f"background-color: {color.name()}; border : 1px solid rgba(0, 0, 0, 150)")
 
 
 class SearchBox(QMainWindow):
